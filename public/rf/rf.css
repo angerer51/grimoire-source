@@ -1,0 +1,144 @@
+/* Warehouse Mode (the RF menu, #386). Its own small stylesheet, not app.css:
+   these screens share no layout with the desk pages, and a phone on the floor
+   shouldn't fetch 114 KB of table styles. The tokens below are the same values
+   as app.css :root (test/rf.page.test.js holds them together).
+
+   Floor rules: one step per screen; the main action at the bottom, where a
+   thumb reaches; targets at least 64px for gloves; large type and strong
+   contrast for bad light; nothing scrolls sideways. */
+[hidden]{display:none!important}
+@font-face{font-family:"IBM Plex Sans";font-weight:400;font-style:normal;font-display:swap;src:url(/fonts/plex-sans-400.woff2) format("woff2")}
+@font-face{font-family:"IBM Plex Sans";font-weight:600;font-style:normal;font-display:swap;src:url(/fonts/plex-sans-600.woff2) format("woff2")}
+@font-face{font-family:"IBM Plex Mono";font-weight:600;font-style:normal;font-display:swap;src:url(/fonts/plex-mono-600.woff2) format("woff2")}
+:root{
+  --bg:#0f1011;
+  --panel:#151617;
+  --panel2:#1a1b1d;
+  --panel3:#222326;
+  --line:#313337;
+  --well:#0b0b0c;
+  --text:#e6e5e0;
+  --text-dim:#bdbcb5;
+  --muted:#9a9992;
+  --gold:#f26b1d;
+  --on-gold:#140a03;
+  --pos:#55b86a;
+  --neg:#e8574f;
+  --warn:#e2c04b;
+  --radius:2px;
+  --font:"IBM Plex Sans","Segoe UI",system-ui,-apple-system,sans-serif;
+  --mono:"IBM Plex Mono","Cascadia Mono",Consolas,ui-monospace,monospace;
+  --tap:68px;
+}
+*{box-sizing:border-box;-webkit-tap-highlight-color:transparent}
+html,body{margin:0;height:100%;background:var(--bg);color:var(--text);font:400 18px/1.35 var(--font);overflow-x:hidden}
+body{-webkit-text-size-adjust:100%;touch-action:manipulation}
+.ic{width:1.1em;height:1.1em;fill:none;stroke:currentColor;stroke-width:2;stroke-linecap:round;stroke-linejoin:round;vertical-align:-.18em;flex:none}
+
+.rf-screen{display:flex;flex-direction:column;min-height:100vh;min-height:100dvh;padding-bottom:env(safe-area-inset-bottom)}
+.rf-head{display:flex;align-items:center;gap:8px;min-height:68px;padding:4px 12px 4px 4px;background:var(--panel);border-bottom:1px solid var(--line);padding-top:max(4px,env(safe-area-inset-top))}
+.rf-head h1{flex:1;min-width:0;margin:0 0 0 8px;font:600 17px/1.2 var(--mono);text-transform:uppercase;letter-spacing:.02em;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.rf-head .rf-step{font:600 15px var(--mono);color:var(--text-dim);white-space:nowrap}
+.rf-back{width:64px;height:64px;flex:none;background:none;border:0;color:var(--text);font-size:22px;display:flex;align-items:center;justify-content:center;padding:0;cursor:pointer}
+
+.rf-body{flex:1;display:flex;flex-direction:column;gap:14px;padding:14px 14px 8px;min-width:0}
+.rf-actions{display:flex;flex-direction:column;gap:10px;padding:10px 14px 14px;position:sticky;bottom:0;background:var(--bg)}
+.rf-actions.two{flex-direction:row}
+.rf-actions.two>*{flex:1;min-width:0}
+
+.rf-btn{display:flex;align-items:center;justify-content:center;gap:10px;width:100%;min-height:var(--tap);padding:10px 14px;font:600 20px/1.2 var(--font);color:var(--text);background:var(--panel3);border:2px solid var(--line);border-radius:var(--radius);text-decoration:none;text-align:center;cursor:pointer}
+.rf-btn:active{background:var(--line)}
+.rf-btn.gold{background:var(--gold);border-color:var(--gold);color:var(--on-gold);font-size:23px;min-height:80px}
+.rf-btn.gold:active{background:#c8550f}
+.rf-btn.danger{background:none;border-color:var(--neg);color:var(--neg)}
+.rf-btn.quiet{min-height:64px;font-size:17px;background:none;color:var(--text-dim)}
+.rf-btn[disabled]{opacity:.45}
+
+.rf-job{display:flex;align-items:center;gap:14px;width:100%;min-height:104px;padding:14px;background:var(--panel2);border:2px solid var(--line);border-radius:var(--radius);color:var(--text);text-align:left;font:600 24px/1.2 var(--font);cursor:pointer}
+.rf-job:active{background:var(--panel3)}
+.rf-job .ic{width:34px;height:34px;color:var(--gold)}
+.rf-job .rf-job-name{flex:1;min-width:0}
+.rf-job .rf-count{font:600 42px/1 var(--mono);color:var(--gold)}
+.rf-job .rf-count.zero{color:var(--muted)}
+
+.rf-row{display:flex;align-items:center;gap:12px;width:100%;min-height:84px;padding:10px 12px;background:var(--panel2);border:2px solid var(--line);border-radius:var(--radius);color:var(--text);text-align:left;font:inherit;cursor:pointer}
+a.rf-row{text-decoration:none}
+.rf-row:active{background:var(--panel3)}
+.rf-row.stack{flex-wrap:wrap}
+.rf-row.stack .rf-row-main{flex:1 0 100%}
+.rf-row.stack .rf-btn{flex:1;width:auto}
+.rf-row.done{border-color:var(--pos)}
+.rf-row-main{flex:1;min-width:0}
+.rf-row-title{font:600 21px/1.2 var(--font);overflow-wrap:anywhere}
+.rf-row-sub{font-size:16px;color:var(--text-dim);overflow-wrap:anywhere}
+.rf-row .rf-tickbox{width:44px;height:44px;flex:none;border:3px solid var(--text-dim);border-radius:var(--radius);display:flex;align-items:center;justify-content:center;font-size:26px;color:var(--bg)}
+.rf-row.done .rf-tickbox{background:var(--pos);border-color:var(--pos)}
+.rf-tag{display:inline-block;padding:2px 8px;font:600 14px/1.4 var(--mono);text-transform:uppercase;border:2px solid var(--text-dim);border-radius:var(--radius);color:var(--text);white-space:nowrap}
+.rf-tag.warn{border-color:var(--warn);background:var(--warn);color:#141000}
+.rf-tag.bad{border-color:var(--neg);background:var(--neg);color:#140303}
+.rf-tag.go{border-color:var(--gold);color:var(--gold)}
+
+.rf-eyebrow{font:600 15px/1.2 var(--mono);text-transform:uppercase;color:var(--text-dim);letter-spacing:.04em}
+.rf-bin{font:600 54px/1.05 var(--mono);color:var(--gold);overflow-wrap:anywhere}
+.rf-bin.small{font-size:30px}
+.rf-big{font:600 26px/1.2 var(--font);overflow-wrap:anywhere}
+.rf-text{font-size:18px;color:var(--text-dim);margin:0}
+.rf-empty{margin:auto;padding:32px 20px;text-align:center;color:var(--text-dim);font-size:19px}
+.rf-empty .ic{display:block;margin:0 auto 12px;width:44px;height:44px;color:var(--muted)}
+.rf-msg{padding:12px 14px;font:600 19px/1.3 var(--font);border:2px solid var(--line);border-radius:var(--radius);background:var(--panel2)}
+.rf-msg.bad{background:var(--neg);border-color:var(--neg);color:#140303}
+.rf-msg.warn{background:var(--panel2);border-color:var(--warn);color:var(--warn)}
+.rf-msg.ok{border-color:var(--pos);color:var(--pos)}
+
+.rf-scan-wrap{display:flex;flex-direction:column;gap:10px}
+.rf-video-box{position:relative;background:#000;border:2px solid var(--line);border-radius:var(--radius);overflow:hidden;height:34vh;min-height:190px}
+.rf-video-box video{display:block;width:100%;height:100%;object-fit:cover}
+.rf-video-box::after{content:"";position:absolute;left:50%;top:50%;width:58%;aspect-ratio:1;max-height:84%;transform:translate(-50%,-50%);border:3px solid var(--gold);border-radius:var(--radius);pointer-events:none}
+.rf-torch{position:absolute;right:8px;top:8px;z-index:1;width:64px;height:64px;background:var(--panel3);border:2px solid var(--line);border-radius:var(--radius);color:var(--text);font-size:24px;display:flex;align-items:center;justify-content:center}
+.rf-torch.on{background:var(--warn);color:#141000;border-color:var(--warn)}
+.rf-input{width:100%;min-height:var(--tap);padding:10px 14px;font:600 24px/1.2 var(--mono);color:var(--text);background:var(--well);border:2px solid var(--line);border-radius:var(--radius)}
+.rf-input:focus{outline:0;border-color:var(--gold)}
+.rf-input::placeholder{color:var(--muted);font:400 18px var(--font)}
+
+.rf-card{display:flex;gap:12px;min-width:0}
+.rf-photo{flex:0 0 58%;min-width:0;padding:0;background:var(--panel2);border:2px solid var(--line);border-radius:var(--radius);overflow:hidden;cursor:zoom-in;display:block;aspect-ratio:63/88;color:var(--muted)}
+.rf-photo img{display:block;width:100%;height:100%;object-fit:cover}
+.rf-photo .rf-nophoto{display:flex;height:100%;align-items:center;justify-content:center;font-size:40px}
+.rf-card.compact .rf-photo{flex-basis:32%}
+.rf-card.compact .rf-art{aspect-ratio:16/9}
+.rf-card-side{flex:1;min-width:0;display:flex;flex-direction:column;gap:8px}
+.rf-art{display:block;width:100%;aspect-ratio:4/3;object-fit:cover;border:2px solid var(--line);border-radius:var(--radius);background:var(--panel2)}
+.rf-qty{font:600 54px/1 var(--mono);color:var(--text)}
+.rf-qty.multi{display:inline-block;align-self:flex-start;padding:2px 10px;color:var(--on-gold);background:var(--gold);border-radius:var(--radius)}
+.rf-chips{display:flex;flex-wrap:wrap;gap:6px}
+.rf-card-name{font:600 24px/1.2 var(--font);overflow-wrap:anywhere;margin:0}
+.rf-card-sub{font:600 16px/1.3 var(--mono);color:var(--text-dim);overflow-wrap:anywhere}
+
+.rf-stepper{display:flex;align-items:stretch;gap:10px}
+.rf-stepper button{flex:0 0 96px;min-height:96px;font:600 44px/1 var(--mono);color:var(--text);background:var(--panel3);border:2px solid var(--line);border-radius:var(--radius);cursor:pointer}
+.rf-stepper button:active{background:var(--line)}
+.rf-stepper output{flex:1;display:flex;align-items:center;justify-content:center;font:600 64px/1 var(--mono);color:var(--gold);background:var(--well);border:2px solid var(--line);border-radius:var(--radius)}
+
+/* One choice of a few (condition, finish, language) on the receive screen (#388):
+   big targets in a grid, the chosen one orange and ticked, never colour alone. */
+.rf-choice{display:grid;grid-template-columns:repeat(auto-fill,minmax(88px,1fr));gap:8px}
+.rf-choice button{min-height:64px;padding:6px;font:600 19px/1.15 var(--font);color:var(--text);background:var(--panel3);border:2px solid var(--line);border-radius:var(--radius);cursor:pointer}
+.rf-choice button.on{background:var(--gold);border-color:var(--gold);color:var(--on-gold)}
+.rf-mini{display:flex;gap:12px;align-items:center;min-width:0}
+.rf-mini .rf-photo{flex:0 0 72px}
+.rf-label{font:600 14px/1.2 var(--mono);text-transform:uppercase;color:var(--text-dim);margin-top:4px}
+
+.rf-tools{display:flex;gap:10px}
+.rf-tools>*{flex:1;min-width:0}
+
+.rf-progress{height:8px;background:var(--panel3)}
+.rf-progress span{display:block;height:100%;background:var(--gold)}
+.rf-whoami{font-size:15px;color:var(--muted);text-align:center;overflow-wrap:anywhere}
+
+.rf-overlay{position:fixed;inset:0;z-index:10;display:flex;flex-direction:column;background:var(--bg);overflow:auto}
+.rf-overlay .rf-body{justify-content:center}
+.rf-overlay.photo{background:#000;align-items:center;justify-content:center;cursor:zoom-out}
+.rf-overlay.photo img{display:block;width:100%;height:100%;object-fit:contain}
+.rf-stop{background:#1d0b0a}
+.rf-stop .ic{width:64px;height:64px;color:var(--neg)}
+.rf-stop h2{margin:0;font:600 34px/1.15 var(--font);color:var(--text)}

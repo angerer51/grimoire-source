@@ -1,0 +1,217 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<title>Locations · Grimoire</title>
+<link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'><rect width='32' height='32' rx='2' fill='%23151617'/><rect x='8' y='5' width='17' height='22' rx='1.5' fill='%231d1e21' stroke='%23f26b1d' stroke-width='2'/><path d='M11.6 5.8v20.4' stroke='%23f26b1d' stroke-width='1.6' opacity='.75'/><path d='M18.6 11.4l3.4 4.6-3.4 4.6-3.4-4.6z' fill='%23f26b1d'/></svg>">
+<link rel="manifest" href="/manifest.webmanifest">
+<link rel="apple-touch-icon" href="/icons/icon-192.png">
+<meta name="theme-color" content="#151617">
+<link rel="stylesheet" href="/css/app.css">
+</head>
+<body>
+
+<main>
+  <h1>Manage locations <a class="help-link" data-full-only href="/help.html#locations" title="Help for this page" aria-label="Help for this page"><svg class=ic aria-hidden=true><use href=/icons/sprite.svg#circle-help></use></svg></a></h1>
+  <p class="page-intro" data-simple-only hidden>A location is a real place: a binder, a deck box, a bulk box, a shelf.
+    Add the places you keep cards here, then pick one when you add a card.</p>
+  <p class="page-intro" data-full-only>The places you keep cards, and the rules that decide what goes where.</p>
+
+  <section>
+    <div class="sec-head"><h2>Add a location</h2></div>
+    <div class="fields" style="grid-template-columns:minmax(200px,1.6fr) 150px 130px 140px 110px 130px auto;max-width:1310px">
+      <label>Name <input id="newName" placeholder="e.g. Red Commons Binder" autocomplete="off" maxlength="80"></label>
+      <label>Type <select id="newType"></select></label>
+      <label id="newCustomWrap" hidden>Custom type <input id="newCustom" placeholder="e.g. Safe / Display"></label>
+      <label data-full-only title="Total cards this place holds. Blank for no limit.">Card ceiling
+        <input id="newMax" type="number" min="0" placeholder="no limit"></label>
+      <label data-full-only title="How many copies of the same card this place will take before the rest overflow elsewhere. Blank for no limit.">Max per card
+        <input id="newPerName" type="number" min="0" placeholder="no limit"></label>
+      <label data-full-only title="Higher wins when two locations match a card equally well">Priority
+        <input id="newPriority" type="number" value="0"></label>
+      <label data-full-only title="Higher wins when a Manapool sync or a sale has to decide which location's copies count as listed/get picked from first">Pick priority
+        <input id="newPickPriority" type="number" value="0"></label>
+      <button id="btnAdd" class="primary">Add location</button>
+    </div>
+    <label class="row" data-full-only style="margin-top:11px" title="A tray cards land in when they come in. Never a putaway destination.">
+      <input type="checkbox" id="newStaging"> <svg class=ic aria-hidden=true><use href=/icons/sprite.svg#inbox></use></svg> This is a sorting tray — cards arrive here and get filed out of it
+    </label>
+    <label class="row" data-full-only style="margin-top:4px" title="Stock here is offered for sale: Listings only lists copies from a location with this on, a Manapool order is picked only from here, and an incoming order can be auto-matched against it. Copies in a location with it off are never listed, but still count toward a listing rule's Keep.">
+      <input type="checkbox" id="newSellFrom"> <svg class=ic aria-hidden=true><use href=/icons/sprite.svg#tag></use></svg> Sell from this location — copies here can be listed on Manapool and picked for its orders
+    </label>
+    <div class="sort-method" data-full-only>
+      <label title="How the cards inside are arranged. Pick lists and Inventory list this location's cards in this order.">Sorting method
+        <select id="newSortPreset"></select></label>
+      <div id="newSortLevels" class="sort-levels" hidden>
+        <div id="newSortList" class="sort-levels" style="margin-top:0"></div>
+        <div><button id="newSortAdd" class="small" type="button">+ Add level</button></div>
+      </div>
+    </div>
+    <div id="addStatus" class="status"></div>
+  </section>
+
+  <section>
+    <div class="sec-head">
+      <h2>Locations <span class="muted" id="locHdr"></span></h2>
+    </div>
+    <div class="toolbar">
+      <div class="tabs" data-full-only style="margin-bottom:0">
+        <button id="viewCompact" class="seg active" title="One row per location — the readable view once you have more than a handful"><svg class=ic aria-hidden=true><use href=/icons/sprite.svg#clipboard-list></use></svg> Compact</button>
+        <button id="viewCards" class="seg" title="One tile per location, with rule text and notes visible inline"><svg class=ic aria-hidden=true><use href=/icons/sprite.svg#layout-grid></use></svg> Cards</button>
+      </div>
+      <input id="locSearch" placeholder="Filter locations…" style="min-width:200px">
+      <select id="locTypeFilter" aria-label="Filter by type"><option value="">All types</option></select>
+      <span class="spacer"></span>
+      <button id="btnBinLabels" title="Print QR labels for the locations shown, for scanning in Warehouse Mode"><svg class=ic aria-hidden=true><use href=/icons/sprite.svg#qr-code></use></svg> Print bin labels…</button>
+      <a data-full-only href="/putaway.html#plan"><button><svg class=ic aria-hidden=true><use href=/icons/sprite.svg#package></use></svg> Re-file everything by the rules…</button></a>
+      <a data-full-only href="/putaway.html#break"><button><svg class=ic aria-hidden=true><use href=/icons/sprite.svg#ban></use></svg> Find rule breakers…</button></a>
+    </div>
+    <div class="table-wrap" id="locTableWrap">
+      <table class="list" data-sort id="locTable">
+        <thead><tr>
+          <th>Name</th><th>Type</th><th class="num">Cards</th><th class="num hide-md">Value</th>
+          <th data-full-only>Putaway</th><th data-full-only class="num hide-lg" title="Priority — higher wins when two locations match a card equally well">Pr.</th>
+          <th data-full-only class="num hide-lg" title="Pick priority — higher wins when a sale or sync has to pick which location's copies count first">Pick</th>
+          <th data-full-only class="num hide-lg" title="Walk sequence — where this location falls on the pick path. No number: after the numbered ones, by name">Walk</th>
+          <th data-nosort><span class="sr-only">Actions</span></th>
+        </tr></thead>
+        <tbody id="locTableBody"></tbody>
+      </table>
+    </div>
+    <div id="locGrid" class="loc-grid" hidden></div>
+  </section>
+</main>
+
+<!-- ===================== Edit location ===================== -->
+<div class="modal-backdrop" id="locModal" hidden>
+  <div class="modal xwide" role="dialog" aria-modal="true" aria-label="Edit location">
+    <h3 id="elTitle">Edit location</h3>
+    <div class="fields" style="grid-template-columns:repeat(5,minmax(0,1fr))">
+      <label class="span2">Name <input id="elName" maxlength="80"></label>
+      <label>Type <select id="elType"></select></label>
+      <label id="elCustomWrap" hidden>Custom type <input id="elCustom" maxlength="40"></label>
+      <label data-full-only title="Total cards this place holds">Card ceiling
+        <input id="elMax" type="number" min="0" placeholder="no limit">
+      </label>
+      <label data-full-only title="Higher wins when two locations match a card equally well">Priority
+        <input id="elPriority" type="number">
+      </label>
+      <label data-full-only title="Higher wins when a Manapool sync or a sale has to decide which location's copies count as listed/get picked from first">Pick priority
+        <input id="elPickPriority" type="number">
+      </label>
+      <label data-full-only title="Where this location falls on the pick path. Pickers walk numbered locations in number order, then any with no number by name.">Walk sequence
+        <input id="elWalkSeq" type="number" min="0" placeholder="by name">
+      </label>
+      <label class="span2" data-full-only title="Copies of the same card, counted across every printing and language">
+        Max copies of the same card
+        <input id="elPerName" type="number" min="0" placeholder="no limit">
+      </label>
+      <label id="elPerPageWrap" data-full-only hidden title="Pockets on one side of a binder sheet (9, 12, 4…). Putaway counts pages with it when it shows where a card goes.">Cards per page
+        <input id="elPerPage" type="number" min="1" max="100" placeholder="9">
+      </label>
+      <label class="span-all">Notes <input id="elNotes" placeholder="anything worth remembering about this location" maxlength="1000"></label>
+    </div>
+    <label class="row" data-full-only style="margin-top:4px">
+      <input type="checkbox" id="elStaging"> <svg class=ic aria-hidden=true><use href=/icons/sprite.svg#inbox></use></svg> Sorting tray — cards arrive here and get filed out of it,
+      and it is never offered as a putaway destination
+    </label>
+    <label class="row" data-full-only style="margin-top:4px" title="Stock here is offered for sale: Listings only lists copies from a location with this on, a Manapool order is picked only from here, and an incoming order can be auto-matched against it. Copies in a location with it off are never listed, but still count toward a listing rule's Keep.">
+      <input type="checkbox" id="elSellFrom"> <svg class=ic aria-hidden=true><use href=/icons/sprite.svg#tag></use></svg> Sell from this location — copies here can be listed on Manapool and picked for its orders
+    </label>
+    <div class="sort-method" data-full-only>
+      <label title="How the cards inside are arranged. Pick lists and Inventory list this location's cards in this order.">Sorting method
+        <select id="elSortPreset"></select></label>
+      <div id="elSortLevels" class="sort-levels" hidden>
+        <div id="elSortList" class="sort-levels" style="margin-top:0"></div>
+        <div><button id="elSortAdd" class="small" type="button">+ Add level</button></div>
+      </div>
+      <div class="hint">How the cards inside are arranged, level 1 first. Pick lists and Inventory list this location's cards in this order.</div>
+    </div>
+    <div id="elInfo" class="muted" style="margin-top:9px"></div>
+
+    <div data-full-only>
+    <hr>
+    <div class="sec-head" style="margin-bottom:6px">
+      <h3 style="margin:0">Putaway rules</h3>
+      <label class="row"><input type="checkbox" id="elPutOn"> Use this location for putaway</label>
+    </div>
+    <div class="rule-help">
+      Pick <b>ALL</b> (AND) or <b>ANY</b> (OR) of the conditions below, with an optional <b>NOT</b> to invert the
+      whole box — <code>Color identity is exactly R</code> + <code>Rarity is any of common, uncommon</code> under
+      ALL reads exactly the way it sounds. Click <b>+ Add group</b> to nest a second box with its own ALL/ANY/NOT,
+      e.g. <code>(Set is neo OR Set is mh3) AND Rarity is common</code>. The list always shows
+      "Evaluates as: …" above the conditions so you can check the expression it actually produced.
+      Switch a condition off with its checkbox to park it without deleting it.
+      A location with putaway on and <b>no</b> conditions matches everything — that is your overflow box, and it
+      loses to any location with a real rule. When two locations match equally well, the higher
+      <b>priority</b> wins, then the one with more free space.
+      <br><br>
+      The two ceilings above are what make overflow work, and they are checked separately:
+      <b>card ceiling</b> caps the whole place, and <b>max copies of the same card</b> caps one card within it —
+      counted across every printing and language, so a foil and a Japanese copy count against the same limit.
+      Set it to <code>1</code> on a one-of-each binder and the second copy onward falls through to whatever
+      ranks next, which is how a <b>sell overflow</b> bin gets fed: give that bin putaway with no rules and a
+      low priority, and it quietly catches everything the nice binders will not take.
+    </div>
+    <div id="elRules"></div>
+    <div class="form-row" style="margin-top:8px">
+      <button id="elAddRule">+ Add a condition</button>
+      <span class="spacer"></span>
+      <span class="muted" id="elRuleCount"></span>
+    </div>
+
+    <hr>
+    <div class="move-box">
+      <strong>Test the rules</strong>
+      <div class="row" style="margin-top:8px">
+        <label style="flex:1;position:relative">Card name
+          <input id="elTestName" placeholder="Type a card name to see whether it belongs here" autocomplete="off">
+          <div id="elTestAc" class="ac-list" hidden></div>
+        </label>
+        <label>Printing <select id="elTestPrint"><option value="">— pick a card —</option></select></label>
+        <label>Finish <select id="elTestFoil"><option value="nonfoil">Non-foil</option><option value="foil">Foil</option><option value="etched">Etched foil</option></select></label>
+      </div>
+      <div class="hint" id="elTestOut"></div>
+    </div>
+    </div>
+
+    <hr>
+    <div class="move-box">
+      <strong>Move all cards to another location</strong>
+      <div class="row" style="margin-top:8px">
+        <label>Destination <select id="elMoveDest"></select></label>
+        <button id="elMoveAll">Move all</button>
+      </div>
+      <div class="hint" id="elMoveHint"></div>
+    </div>
+
+    <hr>
+    <div class="callout bad" style="margin-bottom:12px">
+      <span class="cico"><svg class=ic aria-hidden=true><use href=/icons/sprite.svg#triangle-alert></use></svg></span><div class="cbody">
+        <h3>Danger zone</h3>
+        Deleting a location also deletes every card stored in it — read the count in the confirmation before you click.
+        <div style="margin-top:8px"><button id="elDelete" class="danger">Delete location</button></div>
+      </div>
+    </div>
+    <div class="modal-actions">
+      <span class="spacer"></span>
+      <button id="elPrintLabel" title="Print this location's QR label"><svg class=ic aria-hidden=true><use href=/icons/sprite.svg#qr-code></use></svg> Print label</button>
+      <span class="spacer"></span>
+      <button id="elCancel">Cancel</button>
+      <button id="elSave" class="primary">Save</button>
+    </div>
+  </div>
+</div>
+
+<script src="/js/shipCost.js"></script>
+<script src="/js/priceRuleEngine.js"></script>
+<script src="/js/core.js"></script>
+<script src="/js/glossary.js"></script>
+<script src="/js/ui.js"></script>
+<script src="/js/vendor/qrcode.js"></script>
+<script src="/locations.page.js"></script>
+</body>
+</html>

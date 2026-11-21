@@ -1,0 +1,51 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<title>Grimoire</title>
+<link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'><rect width='32' height='32' rx='2' fill='%23151617'/><rect x='8' y='5' width='17' height='22' rx='1.5' fill='%231d1e21' stroke='%23f26b1d' stroke-width='2'/><path d='M11.6 5.8v20.4' stroke='%23f26b1d' stroke-width='1.6' opacity='.75'/><path d='M18.6 11.4l3.4 4.6-3.4 4.6-3.4-4.6z' fill='%23f26b1d'/></svg>">
+<link rel="manifest" href="/manifest.webmanifest">
+<link rel="apple-touch-icon" href="/icons/icon-192.png">
+<meta name="theme-color" content="#151617">
+<link rel="stylesheet" href="/css/app.css">
+</head>
+<body>
+
+<main>
+  <div class="sec-head">
+    <h1 id="hello">Grimoire</h1>
+    <div class="toolbar">
+      <button type="button" id="goReceive" class="gold"><svg class=ic aria-hidden=true><use href=/icons/sprite.svg#plus></use></svg> Receive cards</button>
+      <button type="button" id="linkPutaway"><svg class=ic aria-hidden=true><use href=/icons/sprite.svg#package></use></svg> Where does this go?</button>
+      <button type="button" id="goInventory">Browse inventory</button>
+    </div>
+  </div>
+  <p id="sinceLast" class="since-last" hidden></p>
+
+  <section id="secThingsToDo" hidden>
+    <div class="sec-head"><h2>Things to do</h2></div>
+    <div id="alerts"></div>
+  </section>
+
+  <section id="secPriceCheck" class="price-check">
+    <label for="priceCheckSearch" class="price-check-lbl">Check a price</label>
+    <div class="price-check-box"><input id="priceCheckSearch" type="search" autocomplete="off" placeholder="Type a card name to see what it's worth" aria-label="Check a card's price"><div id="priceCheckAc" class="ac-list" hidden></div></div>
+    <div id="priceCheckOut" class="price-check-out" aria-live="polite"></div>
+  </section>
+
+  <div class="tiles" id="tiles"></div>
+  <div class="tiles-bar" id="tilesBar"></div>
+
+</main>
+
+<script src="/js/shipCost.js"></script>
+<script src="/js/priceRuleEngine.js"></script>
+<script src="/js/core.js"></script>
+<script src="/js/glossary.js"></script>
+<script src="/js/ui.js"></script>
+<script src="/index.page.js"></script>
+</body>
+</html>

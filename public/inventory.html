@@ -1,0 +1,131 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<title>Inventory · Grimoire</title>
+<link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'><rect width='32' height='32' rx='2' fill='%23151617'/><rect x='8' y='5' width='17' height='22' rx='1.5' fill='%231d1e21' stroke='%23f26b1d' stroke-width='2'/><path d='M11.6 5.8v20.4' stroke='%23f26b1d' stroke-width='1.6' opacity='.75'/><path d='M18.6 11.4l3.4 4.6-3.4 4.6-3.4-4.6z' fill='%23f26b1d'/></svg>">
+<link rel="manifest" href="/manifest.webmanifest">
+<link rel="apple-touch-icon" href="/icons/icon-192.png">
+<meta name="theme-color" content="#151617">
+<link rel="stylesheet" href="/css/app.css">
+</head>
+<body>
+
+<main>
+  <div class="sec-head">
+    <h1>Card Inventory</h1>
+    <button id="btnRecordTrade"><svg class=ic aria-hidden=true><use href=/icons/sprite.svg#handshake></use></svg> Record a trade</button>
+    <button id="btnLentOut" hidden></button>
+  </div>
+  <div class="cols">
+    <div class="col-center">
+      <section class="tight">
+        <div class="toolbar">
+          <input id="search" class="grow" placeholder="Search name, set, collector # or location…">
+          <select id="filterLoc" aria-label="Filter by location"></select>
+          <button id="btnQuery"><svg class=ic aria-hidden=true><use href=/icons/sprite.svg#scan-search></use></svg> Query…</button>
+          <span class="chip" id="queryChip" hidden></span>
+          <button id="btnClear" class="ghost">Clear</button>
+        </div>
+        <div class="toolbar" style="margin-top:10px">
+          <div class="tabs" style="margin-bottom:0">
+            <button id="viewErp" class="seg"><svg class=ic aria-hidden=true><use href=/icons/sprite.svg#chart-column></use></svg> By card name</button>
+            <button id="viewWms" class="seg active"><svg class=ic aria-hidden=true><use href=/icons/sprite.svg#package></use></svg> By stack</button>
+            <button id="viewStorefront" class="seg"><svg class=ic aria-hidden=true><use href=/icons/sprite.svg#tag></use></svg> Storefront</button>
+          </div>
+          <span class="muted" id="viewHint" style="font-size:12px;flex:1;min-width:180px"></span>
+          <span class="muted" id="locOrderHint" style="font-size:12px" hidden></span>
+          <div class="mode-toggle" style="margin-bottom:0">
+            <button id="btnDensityComfy" class="seg active" title="Comfortable row height" aria-label="Comfortable row height"><svg class=ic aria-hidden=true><use href=/icons/sprite.svg#rows-3></use></svg> Comfortable</button>
+            <button id="btnDensityCompact" class="seg" title="Compact row height" aria-label="Compact row height"><svg class=ic aria-hidden=true><use href=/icons/sprite.svg#rows-4></use></svg> Compact</button>
+          </div>
+          <button id="btnRefresh" class="primary"><svg class=ic aria-hidden=true><use href=/icons/sprite.svg#refresh-cw></use></svg> Refresh prices &amp; data</button>
+          <div class="menu-wrap">
+            <button id="btnExport">Export… <svg class=ic aria-hidden=true><use href=/icons/sprite.svg#chevron-down></use></svg></button>
+            <div id="exportMenu" class="menu" hidden>
+              <button id="expCsv">For-sale listings (TCGplayer CSV)</button>
+              <button id="expXlsx">Whole inventory (Excel)</button>
+              <button id="expFiltered">Export filtered (CSV)</button>
+              <hr>
+              <button id="expTransfer">Transfer file (send cards to another user)</button>
+              <div class="mnote">A transfer file holds the printings, quantities and optionally your cost basis.
+                The other user imports it under Receive → Receive inventory from a user.</div>
+            </div>
+          </div>
+          <button id="btnCopy">Copy filtered</button>
+        </div>
+      </section>
+
+      <section class="summary" id="summary"></section>
+
+      <div class="toolbar" id="bulkBar" hidden style="margin-bottom:10px;background:var(--panel2);
+        border:1px solid var(--line-soft);border-radius:var(--radius-sm);padding:8px 12px">
+        <b id="bulkCount"></b>
+        <span class="spacer"></span>
+        <select id="bulkMoveLoc" aria-label="Move to location"></select>
+        <button id="bulkMove" class="small">Move</button>
+        <select id="bulkConditionSel" aria-label="Set condition"></select>
+        <button id="bulkCondition" class="small">Set condition</button>
+        <button id="bulkDelete" class="small danger">Delete</button>
+        <button id="bulkClear" class="small ghost">Clear selection</button>
+      </div>
+      <div class="table-wrap" id="wmsWrap"></div>
+      <div class="table-wrap" id="erpWrap" hidden></div>
+      <div class="table-wrap" id="storefrontWrap" hidden></div>
+    </div>
+
+    <div class="col-right">
+      <aside class="card-panel sticky" id="preview" aria-label="Card preview"></aside>
+    </div>
+  </div>
+</main>
+
+<!-- ===================== Transfer export ===================== -->
+<!-- Every loan, opened from Lent out in the page head (#336). -->
+<div class="modal-backdrop slideover" id="lentPanel" hidden>
+  <div class="slideover-panel" role="dialog" aria-modal="true" aria-labelledby="lentTitle">
+    <div class="slideover-head">
+      <span class="eyebrow" id="lentTitle">Lent out</span>
+      <button type="button" class="small ghost" data-close title="Close" aria-label="Close"><svg class=ic aria-hidden=true><use href=/icons/sprite.svg#x></use></svg></button>
+    </div>
+    <div class="slideover-body" id="lentBody"></div>
+  </div>
+</div>
+
+<div class="modal-backdrop" id="xferModal" hidden>
+  <div class="modal wide" role="dialog" aria-modal="true" aria-label="Export a transfer file">
+    <h3>Export a transfer file</h3>
+    <div class="muted" style="margin-bottom:10px">Send cards to another Grimoire user. Pick how many copies of each
+      filtered stack go on the file; the copies you send are removed from your inventory when you confirm, so the
+      two collections do not both claim the same card.</div>
+    <div class="form-row">
+      <label class="row"><input type="checkbox" id="xfAll" checked> Send every copy of each filtered stack</label>
+      <label class="row"><input type="checkbox" id="xfCost" checked> Include my cost basis</label>
+      <label class="row"><input type="checkbox" id="xfRemove" checked> Remove the sent copies from my inventory</label>
+      <label style="flex:1;min-width:180px">Note for the recipient <input id="xfNote" placeholder="optional" maxlength="1000"></label>
+    </div>
+    <div class="list-wrap" style="margin-top:10px">
+      <table class="list" id="xfTable" data-sort><thead><tr><th><span class="sr-only">Image</span></th><th>Card</th><th>Printing</th><th>Finish</th>
+        <th class="num">Have</th><th class="num">Send</th><th class="num">Cost ea.</th></tr></thead>
+        <tbody id="xfBody"></tbody></table>
+    </div>
+    <div id="xfSummary" class="hint"></div>
+    <hr>
+    <div class="modal-actions"><span class="spacer"></span>
+      <button id="xfCancel">Cancel</button>
+      <button id="xfGo" class="gold">Write the transfer file</button></div>
+  </div>
+</div>
+
+<script src="/js/shipCost.js"></script>
+<script src="/js/priceRuleEngine.js"></script>
+<script src="/js/core.js"></script>
+<script src="/js/glossary.js"></script>
+<script src="/js/ui.js"></script>
+<script src="/js/tradeRecord.js"></script>
+<script src="/inventory.page.js"></script>
+</body>
+</html>

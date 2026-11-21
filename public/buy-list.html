@@ -1,0 +1,164 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<title>Buy List · Grimoire</title>
+<link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'><rect width='32' height='32' rx='2' fill='%23151617'/><rect x='8' y='5' width='17' height='22' rx='1.5' fill='%231d1e21' stroke='%23f26b1d' stroke-width='2'/><path d='M11.6 5.8v20.4' stroke='%23f26b1d' stroke-width='1.6' opacity='.75'/><path d='M18.6 11.4l3.4 4.6-3.4 4.6-3.4-4.6z' fill='%23f26b1d'/></svg>">
+<link rel="manifest" href="/manifest.webmanifest">
+<link rel="apple-touch-icon" href="/icons/icon-192.png">
+<meta name="theme-color" content="#151617">
+<link rel="stylesheet" href="/css/app.css">
+</head>
+<body>
+
+<main>
+  <h1>Buy list <a class="help-link" href="/help.html#buy-list" title="Help for this page" aria-label="Help for this page"><svg class=ic aria-hidden=true><use href=/icons/sprite.svg#circle-help></use></svg></a></h1>
+  <p class="page-intro">Watch card prices and see what's missing from a set.</p>
+
+  <div class="tabs">
+    <button id="tabWatch" class="seg active"><svg class=ic aria-hidden=true><use href=/icons/sprite.svg#star></use></svg> Watch list</button>
+    <button id="tabRestock" class="seg" hidden><svg class=ic aria-hidden=true><use href=/icons/sprite.svg#shopping-cart></use></svg> Restock <span class="badge cap" id="restockCount" hidden></span></button>
+    <button id="tabSet" class="seg"><svg class=ic aria-hidden=true><use href=/icons/sprite.svg#layout-grid></use></svg> Missing from a set</button>
+  </div>
+
+  <div id="paneWatch">
+  <section>
+    <div class="sec-head">
+      <h2><svg class=ic aria-hidden=true><use href=/icons/sprite.svg#star></use></svg> Watch list <span class="muted" id="watchHdr"></span></h2>
+      <label class="row">Compare to
+        <select id="wDays">
+          <option value="7">7 days ago</option>
+          <option value="14">14 days ago</option>
+          <option value="30">30 days ago</option>
+          <option value="90" selected>90 days ago</option>
+          <option value="180">180 days ago</option>
+          <option value="365">1 year ago</option>
+        </select>
+      </label>
+      <button id="btnWatchReload" class="small ghost"><svg class=ic aria-hidden=true><use href=/icons/sprite.svg#refresh-cw></use></svg> Reload</button>
+    </div>
+    <div class="hint" style="margin-top:0" id="watchHintFull" data-full-only><svg class=ic aria-hidden=true><use href=/icons/sprite.svg#trending-down></use></svg> <b>Near low</b> means the current price is within 3% of its lowest
+      point in the window above. <svg class=ic aria-hidden=true><use href=/icons/sprite.svg#arrow-down></use></svg> <b>Below 60d avg</b> means it's cheaper than its own 60-day average. Set a <b>Target</b> on a card to be flagged when it crosses a price you care about.
+      <a href="/help.html#buy-watch">More in Help</a></div>
+    <div class="hint" style="margin-top:0" id="watchHintSimple" hidden>Watch a card to see how its price has changed. Set a <b>Target</b> to be flagged when it reaches a price you care about. <a href="/help.html#buy-watch">More in Help</a></div>
+    <div id="watchAlert" style="margin-top:10px" hidden></div>
+    <div class="table-wrap" style="margin-top:10px">
+      <table data-sort class="watch-table">
+        <thead><tr>
+          <th class="col-art"><span class="sr-only">Image</span></th><th>Card</th><th class="hide-sm">Printing</th><th class="num">Now</th><th class="num hide-sm">Then</th>
+          <th class="num hide-sm">Δ</th><th class="num" id="thChange">Δ%</th><th class="num hide-sm">MA30</th><th class="num hide-sm">MA60</th>
+          <th id="thSignal" class="hide-sm">Signal</th><th class="num">Target</th><th><span class="sr-only">Actions</span></th>
+        </tr></thead>
+        <tbody id="watchBody"><tr><td colspan="12" class="empty">Nothing watched yet — add a card from Missing from a set.</td></tr></tbody>
+      </table>
+    </div>
+  </section>
+  </div>
+
+  <div id="paneRestock" hidden>
+  <section id="restockSec" hidden>
+    <div class="sec-head">
+      <h2>Restock <span class="muted" id="restockHdr"></span></h2>
+      <button id="btnRestockMore" class="small ghost" hidden></button>
+    </div>
+    <div class="hint" id="restockHint">Cards you've sold or customers want, that you have none of, and that are selling well on Manapool this week. <a href="/help.html#buy-restock">More in Help</a></div>
+    <div class="table-wrap">
+      <table data-sort class="restock-table">
+        <thead><tr>
+          <th>Card</th><th class="hide-sm">Printing</th>
+          <th class="num" title="Copies sold on Manapool in the last 7 days, all sellers together">Sold 7d</th>
+          <th class="num hide-sm" title="The card's place among Manapool's best sellers this week, by copies sold">Rank</th>
+          <th class="num" title="Copies you've sold through your Manapool orders">You sold</th>
+          <th class="num hide-sm" title="Customers with this card on their wantlist">Wanted</th>
+          <th><span class="sr-only">Actions</span></th>
+        </tr></thead>
+        <tbody id="restockBody"></tbody>
+      </table>
+    </div>
+  </section>
+  </div>
+
+  <div id="paneSet" hidden>
+    <div class="toolbar">
+      <label class="row">Set
+        <select id="bwSet"><option value="">— pick a set —</option></select>
+      </label>
+      <input id="bwSearch" placeholder="Or search by card name…" style="min-width:220px">
+      <span class="row" id="bwOwnFilter" role="radiogroup" aria-label="Which cards to show">
+        <label class="row"><input type="radio" name="bwOwn" value="all"> Show all</label>
+        <label class="row"><input type="radio" name="bwOwn" value="printing" checked> Hide printings I own</label>
+        <label class="row"><input type="radio" name="bwOwn" value="any"> Hide cards I own any printing of</label>
+      </span>
+      <label class="row" title="Which finish the Price column shows, for the set's own (lowest-numbered) printing">Price for
+        <select id="bwFinish"><option value="nonfoil">Non-foil</option><option value="foil">Foil</option><option value="etched">Etched</option></select>
+      </label>
+      <span class="spacer"></span>
+      <button id="btnCsv">Export CSV</button>
+    </div>
+    <div id="status" class="status"></div>
+
+  <div class="tiles" id="tiles" style="margin-top:12px"></div>
+
+  <section>
+    <div class="sec-head">
+      <h2>Results <span class="muted" id="resHdr"></span></h2>
+    </div>
+    <div class="table-wrap">
+      <table data-sort class="res-table">
+        <thead><tr>
+          <th class="col-art"><span class="sr-only">Image</span></th><th>Card</th><th class="hide-sm">Set</th><th class="num hide-sm" title="Collector number of the set's own printing">#</th><th class="hide-sm">Rarity</th><th class="num hide-sm" title="Near Mint market price of the set's own printing, in the finish chosen above">Price</th><th class="num hide-sm" title="Cheapest to priciest of any printing in this set, any finish. Sorts by the cheapest.">Range (any)</th>
+          <th class="num hide-xs" title="Copies you own in this set"><span class="lg-only">Own: this</span><span class="sm-only">Own</span></th><th class="num hide-sm" title="Copies you own across every printing">Own: any</th><th>Friends</th><th><span class="sr-only">Actions</span></th>
+        </tr></thead>
+        <tbody id="resBody"><tr><td colspan="11" class="empty">Pick a set, or search by name.</td></tr></tbody>
+      </table>
+    </div>
+  </section>
+  </div>
+</main>
+
+<!-- ===================== Price history ===================== -->
+<div class="modal-backdrop" id="histModal" hidden>
+  <div class="modal wide" role="dialog" aria-modal="true" aria-label="Price history">
+    <h3 id="hTitle">Price history</h3>
+    <div id="hMeta" class="muted" style="margin-bottom:10px"></div>
+    <div id="hChart"></div>
+    <div class="legend"><span><i class="usd"></i>Non-foil</span><span><i class="foil"></i>Foil</span>
+      <span><i class="etched"></i>Etched foil</span>
+      <span data-full-only><i class="ma30"></i>30-day MA</span><span data-full-only><i class="ma60"></i>60-day MA</span></div>
+    <div id="hTable" style="margin-top:12px"></div>
+    <hr>
+    <div class="modal-actions"><span class="spacer"></span><button id="hClose">Close</button></div>
+  </div>
+</div>
+
+<!-- ===================== Buy menu ===================== -->
+<div class="modal-backdrop" id="buyModal" hidden>
+  <div class="modal wide" role="dialog" aria-modal="true" aria-label="Buy">
+    <h3 id="buyTitle">Buy</h3>
+    <div class="muted" id="buyMeta" style="margin-bottom:10px">Every priced version of this card, lowest first - each opens its own Manapool listing.</div>
+    <div id="buyBody" class="list-wrap"></div>
+    <div class="modal-actions" style="margin-top:14px"><span class="spacer"></span><button id="buyClose">Close</button></div>
+  </div>
+</div>
+
+<!-- ===================== Friends who have it ===================== -->
+<div class="modal-backdrop" id="friendsModal" hidden>
+  <div class="modal" role="dialog" aria-modal="true" aria-label="Friends who own this">
+    <h3 id="frTitle">Who owns this</h3>
+    <div id="frBody"></div>
+    <div class="modal-actions" style="margin-top:14px"><span class="spacer"></span><button id="frClose">Close</button></div>
+  </div>
+</div>
+
+<script src="/js/shipCost.js"></script>
+<script src="/js/priceRuleEngine.js"></script>
+<script src="/js/core.js"></script>
+<script src="/js/glossary.js"></script>
+<script src="/js/ui.js"></script>
+<script src="/js/tradeCompose.js"></script>
+<script src="/buy-list.page.js"></script>
+</body>
+</html>

@@ -1,0 +1,307 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<title>Movers &amp; Shakers · Grimoire</title>
+<link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'><rect width='32' height='32' rx='2' fill='%23151617'/><rect x='8' y='5' width='17' height='22' rx='1.5' fill='%231d1e21' stroke='%23f26b1d' stroke-width='2'/><path d='M11.6 5.8v20.4' stroke='%23f26b1d' stroke-width='1.6' opacity='.75'/><path d='M18.6 11.4l3.4 4.6-3.4 4.6-3.4-4.6z' fill='%23f26b1d'/></svg>">
+<link rel="manifest" href="/manifest.webmanifest">
+<link rel="apple-touch-icon" href="/icons/icon-192.png">
+<meta name="theme-color" content="#151617">
+<link rel="stylesheet" href="/css/app.css">
+</head>
+<body>
+
+<main>
+  <h1>Movers &amp; shakers <a class="help-link" data-full-only href="/help.html#tracking" title="Help for this page" aria-label="Help for this page"><svg class=ic aria-hidden=true><use href=/icons/sprite.svg#circle-help></use></svg></a></h1>
+  <p class="page-intro">See which cards are gaining or losing value.</p>
+
+  <div class="tabs">
+    <button id="tabMovers" class="seg active"><svg class=ic aria-hidden=true><use href=/icons/sprite.svg#chart-column></use></svg> Movers</button>
+    <button id="tabHighlights" class="seg"><svg class=ic aria-hidden=true><use href=/icons/sprite.svg#bell></use></svg> Worth a look today</button>
+    <button id="tabSelling" class="seg"><svg class=ic aria-hidden=true><use href=/icons/sprite.svg#trending-up></use></svg> Selling fast</button>
+    <button id="tabPortfolio" class="seg"><svg class=ic aria-hidden=true><use href=/icons/sprite.svg#trending-up></use></svg> Portfolio</button>
+  </div>
+
+  <div id="paneMovers">
+  <section class="flat">
+    <div class="toolbar">
+      <label class="row">Vendor
+        <select id="vendor" title="Which MTGJSON price source drives every number below">
+          <option value="tcg" selected>TCGplayer</option>
+          <option value="ck">CardKingdom</option>
+          <option value="cm">Cardmarket (€)</option>
+          <option value="cs">Cardsphere</option>
+          <option value="mp">Manapool</option>
+        </select>
+      </label>
+      <label class="row">Window
+        <select id="days">
+          <option value="1">1 day</option>
+          <option value="7" selected>7 days</option>
+          <option value="14">14 days</option>
+          <option value="30">30 days</option>
+          <option value="90">90 days</option>
+          <option value="180">180 days</option>
+          <option value="365">1 year</option>
+        </select>
+        <span class="faint" id="daysStoreNote" hidden>Set by your store's managers.</span>
+      </label>
+      <label class="row">Show
+        <select id="dir">
+          <option value="all">everything that moved</option>
+          <option value="up">gainers only</option>
+          <option value="down">fallers only</option>
+        </select>
+      </label>
+      <label class="row">View
+        <select id="group" title="Exact printing: one row per specific printing/finish, as today. Any printing: one row per card, combining every printing of it that moved - lets you tell whether a move is isolated to one printing or broad across the whole card.">
+          <option value="printing" selected>Exact printing</option>
+          <option value="card">Any printing (whole card)</option>
+        </select>
+      </label>
+      <label class="row">Popularity
+        <select id="rankDir" title="EDHRec rank: a lower number means more popular">
+          <option value="all">everything that moved</option>
+          <option value="up">getting more popular</option>
+          <option value="down">getting less popular</option>
+        </select>
+      </label>
+      <label class="row">Rank by
+        <select id="rank">
+          <option value="valueDelta">value change (qty × price move)</option>
+          <option value="delta">price change per card</option>
+          <option value="pct">percent change</option>
+          <option value="now">current price</option>
+          <option value="rankDelta">EDHRec rank change</option>
+          <option value="sold7d">copies sold in 7 days (Manapool)</option>
+        </select>
+      </label>
+      <label class="row">Min price <input id="minPrice" type="number" min="0" step="0.01" value="1" style="width:90px"></label>
+      <label class="row"><input type="checkbox" id="onlyHeld" checked> Only cards I still hold</label>
+      <span class="spacer"></span>
+      <button id="btnCsv">Export CSV</button>
+      <button id="btnReload"><svg class=ic aria-hidden=true><use href=/icons/sprite.svg#refresh-cw></use></svg> Reload</button>
+    </div>
+    <div class="toolbar" style="margin-top:8px">
+      <label class="row">Signal
+        <select id="signal" title="Both price and EDHRec rank are lagging indicators - the first options flag one moving without the other yet; the last keeps price rises with faster-than-usual selling behind them">
+          <option value="any">no divergence filter</option>
+          <option value="rankLeads">rank improving, price flat (early signal)</option>
+          <option value="priceLeads">price improved, rank flat (caution)</option>
+          <option value="backedRise">price up and selling faster than usual (SELLING FAST)</option>
+        </select>
+      </label>
+      <label class="row">Price flat within <input id="flatPct" type="number" min="0" step="0.5" value="2" style="width:70px">%</label>
+      <label class="row">Rank flat within <input id="flatSpots" type="number" min="0" step="1" value="25" style="width:70px"> spots</label>
+    </div>
+    <div id="status" class="status"></div>
+  </section>
+
+  <div class="tiles" id="tiles"></div>
+
+  <section>
+    <div class="sec-head">
+      <h2>What moved <span class="muted" id="moveHdr"></span></h2>
+      <input id="search" placeholder="Filter by card, set or location…" style="min-width:220px">
+    </div>
+    <div class="table-wrap">
+      <table data-sort id="moveTable">
+        <thead><tr>
+          <th></th><th>Card</th><th id="thPrinting">Printing</th><th id="thFinish">Finish</th><th class="num">Qty</th>
+          <th class="num hide-sm">Then</th><th class="num hide-sm">Now</th>
+          <th class="num hide-sm" title="30-day median: the middle price of the last 30 days that had a price. A dash means too few recent prices.">MA30</th><th class="num hide-sm" title="60-day median: the middle price of the last 60 days that had a price. A dash means too few recent prices.">MA60</th><th class="num hide-sm" title="How far the 30-day median sits above (+) or below (−) the 60-day one, as a percent. Hover a cell for the dollar gap.">MA30−60 %</th>
+          <th class="num">Δ each</th>
+          <th class="num" id="thPct">Δ %</th><th class="num">Δ value</th>
+          <th class="num hide-sm" title="EDHRec rank - lower is more popular. This is the card's rank, the same for every printing of it, not something specific to the row's printing.">Rank</th>
+          <th class="num" title="Change in EDHRec rank - negative (green) means more popular. This is the card's rank moving, not this specific printing's.">Rank Δ</th>
+          <th class="num hide-sm" id="thSold" title="Copies sold on Manapool in the last 7 days - Manapool only, other stores' sales are not included. Counts every finish, condition and language of the printing. A leading ≥ means at least this many. SELLING FAST marks separate sales coming well above their usual pace.">Sold 7d</th>
+          <th class="num hide-sm" title="How many of this printing/condition are currently listed for sale, same as the Storefront view's Listed column">Listed</th><th class="num hide-sm">Cost ea.</th><th>Actions</th>
+        </tr></thead>
+        <tbody id="moveBody"></tbody>
+      </table>
+    </div>
+  </section>
+  </div>
+
+  <div id="panePortfolio" hidden>
+  <section>
+    <div class="sec-head">
+      <h3>Portfolio value</h3>
+      <div class="toolbar">
+        <label class="row">Vendor
+          <select id="portVendor" title="Which MTGJSON price source drives the chart. The same setting as Vendor on the Movers tab.">
+            <option value="tcg" selected>TCGplayer</option>
+            <option value="ck">CardKingdom</option>
+            <option value="cm">Cardmarket (€)</option>
+            <option value="cs">Cardsphere</option>
+            <option value="mp">Manapool</option>
+          </select>
+        </label>
+        <label class="row">Range
+          <select id="portDays">
+            <option value="30">30 days</option>
+            <option value="90" selected>90 days</option>
+            <option value="180">180 days</option>
+            <option value="365">1 year</option>
+          </select>
+        </label>
+      </div>
+    </div>
+    <div class="hint" style="margin-top:0">Today's quantities priced at each historic date: what your cards were worth, not what you held.
+      <a href="/help.html#movers-details">More in Help</a></div>
+    <div id="portChart" style="margin-top:10px"></div>
+    <div class="legend"><span><i class="usd"></i>Portfolio value</span></div>
+  </section>
+  </div>
+
+  <div id="paneSelling" hidden>
+  <section>
+    <div class="sec-head">
+      <h2><svg class=ic aria-hidden=true><use href=/icons/sprite.svg#trending-up></use></svg> Selling fast <span class="muted" id="sfHdr"></span></h2>
+      <div class="toolbar">
+        <input id="sfSearch" aria-label="Search every card that sold on Manapool in the last 7 days" autocomplete="off" placeholder="Search card name…" style="min-width:200px">
+        <label class="row"><input type="checkbox" id="sfHideLands" checked> Hide basic lands</label>
+      </div>
+    </div>
+    <div class="status" id="sfStatus"></div>
+    <div id="sfNotes" class="muted" style="font-size:12px;margin:6px 0 10px"></div>
+    <div class="table-wrap">
+      <table id="sellTable" class="head-wrap">
+        <thead><tr>
+          <th></th><th class="num sortable" title="Overall rank by copies sold on Manapool in the last 7 days, among every card that sold. Sorting by another column doesn't renumber it.">Rank</th>
+          <th class="sortable">Card</th><th class="sortable hide-sm" title="How many printings of this card sold on Manapool in the last 30 days">Printings</th>
+          <th class="num sortable" title="Copies sold on Manapool in the last 7 days of sales we have, every finish, condition and language together. A bulk purchase counts every copy. A leading ≥ means at least this many.">Sold 7d</th>
+          <th class="num sortable hide-sm" title="Copies sold on Manapool in the last 30 days. A leading ≥ means at least this many.">Sold 30d</th>
+          <th class="num sortable hide-sm" title="Separate sales (orders) in the last 7 days">Sales 7d</th>
+          <th class="num sortable hide-sm" title="Separate sales per day over the last 7 days, compared with the days of history before them. A bulk purchase counts as one sale, so it can't make a spike on its own.">Pace vs usual</th>
+          <th class="num sortable hide-sm" title="Copies listed for sale on Manapool now, and in brackets 7 days ago. Falling supply (green, down arrow) while sales hold up is the sign to raise a price or restock. Sorts by how far supply fell, biggest drop first. A dash means one of the two numbers is unknown.">Listed now (7d ago)</th>
+          <th class="num sortable hide-sm" title="About how many days the copies listed on Manapool now would last at the last 7 days' pace: listed copies ÷ copies sold a day. A market-wide estimate for every seller together, not a forecast for your own price. Blank with too few sales to say. Sorts shortest first.">Days left</th>
+          <th class="sortable" title="SELLING FAST when sales in the last 7 days came at least twice as fast as before; Too early until there are two weeks of history">Status</th>
+        </tr></thead>
+        <tbody id="sellBody"></tbody>
+      </table>
+    </div>
+    <div class="toolbar" id="sfMore" hidden style="margin-top:10px">
+      <span class="muted" id="sfMoreCount"></span>
+      <button id="sfMoreBtn"><svg class=ic aria-hidden=true><use href=/icons/sprite.svg#chevron-down></use></svg> <span id="sfMoreLabel">Show 500 more</span></button>
+    </div>
+  </section>
+  </div>
+
+  <div id="paneHighlights" hidden>
+  <section>
+    <div class="grp">
+    <div class="sec-head"><h3><svg class=ic aria-hidden=true><use href=/icons/sprite.svg#bell></use></svg> Today's top picks <span class="muted" id="highlightsHdr"></span></h3></div>
+    <div class="hint" style="margin-top:0">A curated pick from the Movers tab, independent of its filters. Click a line for that printing's full price history.
+      <a href="/help.html#movers-details">More in Help</a></div>
+    <div class="feed" id="highlightsWrap" style="margin-top:12px"></div>
+  </div>
+
+    <div class="grp">
+    <div class="sec-head">
+      <h3><svg class=ic aria-hidden=true><use href=/icons/sprite.svg#merge></use></svg> Golden cross <span class="muted" id="gxHdr"></span></h3>
+      <div class="toolbar">
+        <label class="row">Crossed in the last <input id="gxDays" type="number" min="1" max="30" step="1" value="7" style="width:64px"> days</label>
+        <label class="row" title="How far the 30-day line must sit above the 60-day line today. 0 shows every cross.">At least <input id="gxGap" type="number" min="0" max="100" step="1" value="5" style="width:64px">% above</label>
+        <label class="row"><input type="checkbox" id="gxMine"> Show only mine</label>
+      </div>
+    </div>
+    <div class="hint" style="margin-top:0">Cards whose 30-day price line moved above the 60-day line in that time and is still at least that far above.
+      <a href="/help.html#movers-golden-cross">More in Help</a></div>
+    <div class="table-wrap" style="margin-top:10px">
+      <table data-sort id="gxTable">
+        <thead><tr>
+          <th></th><th>Card</th>
+          <th class="num" title="When the 30-day line moved above the 60-day line">Crossed</th>
+          <th class="num">Now</th>
+          <th class="num hide-sm" title="Middle price over the last 30 priced days">MA30</th>
+          <th class="num hide-sm" title="Middle price over the last 60 priced days">MA60</th>
+          <th class="num" title="How far the 30-day line sits above the 60-day one, as a percent">MA30−60 %</th>
+          <th class="num" title="How many you own">Qty</th>
+        </tr></thead>
+        <tbody id="gxBody"></tbody>
+      </table>
+    </div>
+  </div>
+
+    <div class="grp">
+    <div class="sec-head">
+      <h3><svg class=ic aria-hidden=true><use href=/icons/sprite.svg#scan-search></use></svg> Explore <span class="muted" id="exploreHdr"></span></h3>
+      <div class="toolbar">
+        <label class="row">Lens
+          <select id="exCategory">
+            <option value="signal">Early signal (rank improving, price hasn't caught up)</option>
+            <option value="caution">Caution (price up, rank hasn't caught up)</option>
+            <option value="pctUp">Biggest % gainers</option>
+            <option value="pctDown">Biggest % fallers</option>
+            <option value="rankUp">Biggest EDHRec rank gainers</option>
+            <option value="rankDown">Biggest EDHRec rank fallers</option>
+            <option value="valueUp">Biggest value gainers (held)</option>
+            <option value="valueDown">Biggest value fallers (held)</option>
+            <option value="recovering">Recovering (held, below cost, trending up)</option>
+            <option value="fading">Losing steam (held, above cost, trending down)</option>
+            <option value="trendingUp">Trending up (not owned: 30-day median above 60-day, rank improving)</option>
+          </select>
+        </label>
+        <label class="row">Show top <select id="exCount">
+          <option value="10">10</option>
+          <option value="25" selected>25</option>
+          <option value="50">50</option>
+          <option value="100">100</option>
+        </select></label>
+        <label class="row">Min price <input id="exMinPrice" type="number" min="0" step="0.01" value="1" style="width:90px"></label>
+        <label class="row"><input type="checkbox" id="exHeldOnly"> Only cards I still hold</label>
+      </div>
+    </div>
+    <div class="hint" style="margin-top:0">Pick a category, widen or narrow it, and sort any column. EDHRec rank belongs to the card, not the printing shown.
+      <a href="/help.html#movers-details">More in Help</a></div>
+    <div class="table-wrap" style="margin-top:10px">
+      <table data-sort>
+        <thead><tr>
+          <th></th><th>Card</th><th>Shown via</th><th class="num">Qty</th>
+          <th class="num hide-sm" title="How far the 30-day median sits above (+) or below (−) the 60-day one, as a percent - positive means the price is trending up">MA30−60 %</th>
+          <th class="num">Now</th><th class="num">Δ each</th><th class="num">Δ %</th><th class="num">Δ value</th>
+          <th class="num hide-sm">Cost ea.</th>
+          <th class="num" title="EDHRec rank - lower is more popular">Rank</th>
+          <th class="num" title="Change in EDHRec rank - the card's rank, not this printing's">Rank Δ</th>
+        </tr></thead>
+        <tbody id="exploreBody"></tbody>
+      </table>
+    </div>
+    </div>
+  </section>
+  </div>
+</main>
+
+<!-- ===================== Price history ===================== -->
+<div class="modal-backdrop" id="histModal" hidden>
+  <div class="modal wide" role="dialog" aria-modal="true" aria-label="Price history">
+    <h3 id="hTitle">Price history</h3>
+    <div id="hMeta" class="muted" style="margin-bottom:10px"></div>
+    <div id="hChart"></div>
+    <div class="legend"><span><i class="usd"></i>Non-foil</span><span><i class="foil"></i>Foil</span>
+      <span><i class="etched"></i>Etched foil</span>
+      <span><i class="ma30"></i>30-day MA</span><span><i class="ma60"></i>60-day MA</span></div>
+    <div id="hTable" style="margin-top:12px"></div>
+    <div id="hRankSection" hidden style="margin-top:20px">
+      <h4 style="margin:0 0 4px">EDHRec rank history</h4>
+      <div class="muted" style="font-size:12.5px;margin-bottom:8px">Lower is more popular — the axis is flipped so an upward line means gaining popularity, same as the price chart above.</div>
+      <div id="hRankChart"></div>
+    </div>
+    <hr>
+    <div class="modal-actions"><span class="spacer"></span><button id="hClose">Close</button></div>
+  </div>
+</div>
+
+<script src="/js/shipCost.js"></script>
+<script src="/js/priceRuleEngine.js"></script>
+<script src="/js/core.js"></script>
+<script src="/js/glossary.js"></script>
+<script src="/js/ui.js"></script>
+<script src="/js/moversPicks.js"></script>
+<script src="/movers.page.js"></script>
+</body>
+</html>

@@ -1,0 +1,108 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<title>Order cards · Grimoire</title>
+<link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'><rect width='32' height='32' rx='2' fill='%23151617'/><rect x='8' y='5' width='17' height='22' rx='1.5' fill='%231d1e21' stroke='%23f26b1d' stroke-width='2'/><path d='M11.6 5.8v20.4' stroke='%23f26b1d' stroke-width='1.6' opacity='.75'/><path d='M18.6 11.4l3.4 4.6-3.4 4.6-3.4-4.6z' fill='%23f26b1d'/></svg>">
+<meta name="theme-color" content="#151617">
+<link rel="stylesheet" href="/css/app.css">
+</head>
+<body class="kiosk">
+<!-- The store's kiosk (#433): a customer builds their own order. A kiosk
+     session reaches this page and its four /api/kiosk/* routes only (server
+     handle()); no core.js or ui.js, since nothing of the account is here. -->
+<header class="kiosk-top">
+  <div class="brand">
+    <svg class="logo" viewBox="0 0 32 32" role="img" aria-label="Grimoire">
+      <rect x="9" y="5" width="18" height="22" rx="1" fill="#d9d7cf"/>
+      <rect x="5.5" y="4" width="19" height="24" rx="1.5" fill="#1d1e21" stroke="#f26b1d" stroke-width="1.5"/>
+      <path d="M10.2 4.9v22.2" stroke="#f26b1d" stroke-width="1.2" opacity=".75"/>
+      <path d="M17.4 11.2 20.8 16l-3.4 4.8L14 16z" fill="#f26b1d"/>
+    </svg>
+    <span id="kStore">Order cards</span>
+  </div>
+  <span class="spacer"></span>
+  <button id="kStaff" class="ghost" title="Staff: leave kiosk mode" aria-label="Staff: leave kiosk mode"><svg class=ic aria-hidden=true><use href=/icons/sprite.svg#lock></use></svg> Staff</button>
+</header>
+
+<main id="kShop" class="kiosk-main">
+  <section class="kiosk-find">
+    <h1>Find your cards</h1>
+    <input id="kSearch" class="kiosk-search" placeholder="Card name, set code or number" autocomplete="off" autocapitalize="off" spellcheck="false" aria-label="Search for a card">
+    <!-- Browse with no typing (#438): the choices are only what's in stock (filled from the search's facets). -->
+    <div id="kFilters" class="kiosk-filters" hidden>
+      <select id="kfSet" aria-label="Set"><option value="">All sets</option></select>
+      <select id="kfType" aria-label="Card type"><option value="">All card types</option></select>
+      <select id="kfRarity" aria-label="Rarity"><option value="">All rarities</option></select>
+      <select id="kfPrice" aria-label="Price"><option value="">Any price</option></select>
+      <div id="kfColors" class="kiosk-colors" role="group" aria-label="Color"></div>
+      <button id="kfClear" class="ghost" hidden><svg class=ic aria-hidden=true><use href=/icons/sprite.svg#x></use></svg> Clear filters</button>
+    </div>
+    <div id="kPopular" class="kiosk-popular" hidden>
+      <h2><svg class=ic aria-hidden=true><use href=/icons/sprite.svg#trending-up></use></svg> Popular right now</h2>
+      <ul id="kPopularRow" class="kiosk-grid kiosk-strip"></ul>
+    </div>
+    <h2 id="kGridTitle" class="kiosk-grid-title">Everything in stock</h2>
+    <ul id="kResults" class="kiosk-grid"></ul>
+    <button id="kMore" class="kiosk-more" hidden>Show more cards</button>
+  </section>
+
+  <section class="kiosk-order" aria-labelledby="kOrderTitle">
+    <h2 id="kOrderTitle">Your order</h2>
+    <ul id="kLines" class="kiosk-lines"></ul>
+    <div class="kiosk-total"><span>Total</span><span id="kTotal">$0.00</span></div>
+    <div id="kLimit" class="hint" hidden></div>
+    <label>Your name <input id="kName" autocomplete="off" maxlength="80"></label>
+    <label>Email or phone <input id="kContact" autocomplete="off" maxlength="254" inputmode="email"></label>
+    <div class="hint">So the store can reach you about your order. You pay at the counter when you collect your cards.</div>
+    <div id="kStatus" class="status" role="status"></div>
+    <button id="kSend" class="gold kiosk-send" disabled>Send order</button>
+    <button id="kClear" class="ghost kiosk-send" disabled>Start over</button>
+  </section>
+</main>
+
+<main id="kDone" class="kiosk-done" hidden>
+  <svg class="ic kiosk-done-icon" aria-hidden="true"><use href="/icons/sprite.svg#circle-check"></use></svg>
+  <h1 id="kDoneTitle">Thank you</h1>
+  <p>Your order number is</p>
+  <div id="kDoneNo" class="kiosk-order-no"></div>
+  <p id="kDoneWhat" class="muted"></p>
+  <p>Your cards are set aside. Pay at the counter when you collect them.</p>
+  <button id="kNext" class="primary">Start a new order</button>
+</main>
+
+<main id="kEnded" class="kiosk-done" hidden>
+  <h1>This screen isn't in kiosk mode</h1>
+  <p class="muted">Ask a member of staff to set it up again.</p>
+  <a href="/login.html">Staff sign-in</a>
+</main>
+
+<!-- A card, bigger (#459): tap a tile's picture. Tap outside, the X or Esc closes it. -->
+<div id="kZoom" class="modal-backdrop kiosk-zoom" role="dialog" aria-modal="true" aria-labelledby="kZoomTitle" hidden>
+  <div class="modal">
+    <div class="kz-head">
+      <h3 id="kZoomTitle"></h3>
+      <button id="kZoomClose" class="ghost" title="Close" aria-label="Close"><svg class=ic aria-hidden=true><use href=/icons/sprite.svg#x></use></svg></button>
+    </div>
+    <div id="kZoomBody" class="kz-body"></div>
+  </div>
+</div>
+
+<div id="kPinDlg" class="modal-backdrop" role="dialog" aria-modal="true" aria-labelledby="kPinTitle" hidden>
+  <div class="modal">
+    <h3 id="kPinTitle">Leave kiosk mode</h3>
+    <label>Staff PIN <input id="kPin" type="password" inputmode="numeric" autocomplete="off" maxlength="8"></label>
+    <div id="kPinStatus" class="status" role="status"></div>
+    <div class="modal-actions">
+      <button id="kPinCancel">Cancel</button><span class="spacer"></span>
+      <button id="kPinOk" class="primary">Leave kiosk mode</button>
+    </div>
+  </div>
+</div>
+
+<script src="/kiosk.page.js"></script>
+</body>
+</html>

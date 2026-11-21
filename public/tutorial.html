@@ -1,0 +1,145 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<title>Welcome · Grimoire</title>
+<link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'><rect width='32' height='32' rx='2' fill='%23151617'/><rect x='8' y='5' width='17' height='22' rx='1.5' fill='%231d1e21' stroke='%23f26b1d' stroke-width='2'/><path d='M11.6 5.8v20.4' stroke='%23f26b1d' stroke-width='1.6' opacity='.75'/><path d='M18.6 11.4l3.4 4.6-3.4 4.6-3.4-4.6z' fill='%23f26b1d'/></svg>">
+<link rel="manifest" href="/manifest.webmanifest">
+<link rel="apple-touch-icon" href="/icons/icon-192.png">
+<meta name="theme-color" content="#151617">
+<link rel="stylesheet" href="/css/app.css">
+</head>
+<body class="auth">
+
+<div class="auth-card tut-card" role="main">
+  <h1 class="sr-only">Grimoire welcome tour</h1>
+  <div class="tut-head">
+    <div class="brand">
+      <svg class="logo" viewBox="0 0 32 32" role="img" aria-label="Grimoire" style="width:30px;height:30px">
+        <rect x="9" y="5" width="18" height="22" rx="1" fill="#d9d7cf"/>
+        <rect x="5.5" y="4" width="19" height="24" rx="1.5" fill="#1d1e21" stroke="#f26b1d" stroke-width="1.5"/>
+        <path d="M10.2 4.9v22.2" stroke="#f26b1d" stroke-width="1.2" opacity=".75"/>
+        <path d="M17.4 11.2 20.8 16l-3.4 4.8L14 16z" fill="#f26b1d"/>
+        <path d="M17.4 22.7v1.6" stroke="#f26b1d" stroke-width="1.2" opacity=".8"/>
+      </svg>
+      Grimoire
+    </div>
+    <button type="button" id="tutSkip" class="ghost small">Skip tutorial →</button>
+  </div>
+  <div class="tut-dots" id="tutDots"></div>
+
+  <!-- Step 1: welcome + simple-mode choice -->
+  <section class="tut-step" id="step1">
+    <h2>Two minutes, using made-up cards</h2>
+    <p class="tut-copy">The cards in this tour are made up and are not saved to your collection. At the end you can name your first binder — skip it anytime.</p>
+    <p class="tut-copy">First: how are you planning to use Grimoire?</p>
+    <div class="tut-choice">
+      <button type="button" class="tut-choice-btn" id="choiceSimple">
+        <b>Just for me</b>
+        <span>Track a collection, maybe sell a few cards casually. Sealed product, Movers and the business tools stay in full mode, one click to turn on.</span>
+      </button>
+      <button type="button" class="tut-choice-btn" id="choiceBusiness">
+        <b>Running this like a business</b>
+        <span>Warehouse locations, pricing rules, order fulfillment.</span>
+      </button>
+    </div>
+    <p class="hint" id="step1Hint">You can change this anytime in Settings → Preferences.</p>
+  </section>
+
+  <!-- Step 2: add a card -->
+  <section class="tut-step" id="step2" hidden>
+    <h2>Add a card</h2>
+    <p class="tut-copy">Search a real card — this looks up the actual card database.</p>
+    <p class="tut-copy">Magic cards get reprinted many times over the years, sometimes with different art or as a
+      shiny "foil" version — each specific version is called a <b>printing</b>. Pick one from the list that
+      appears after you search. On the real <b id="tutRealPage">Receive</b> page later you'll do the same: choose the printing that
+      matches the physical card in your hand, so you never add the wrong (and sometimes far pricier) one.</p>
+    <label class="span-all" style="position:relative">
+      <input id="tutSearch" aria-label="Search for a card" placeholder="Try &quot;Lightning Bolt&quot;…" autocomplete="off">
+      <div id="tutAcList" class="ac-list" hidden></div>
+    </label>
+    <label class="span-all" id="tutPrintLbl" hidden>Printing
+      <input id="tutPrintFilter" aria-label="Narrow the printings" placeholder="Narrow the list: set name, set code or year" autocomplete="off">
+      <select id="tutPrinting"></select>
+      <span class="hint">Newest first. On a real card, the set code and number are printed at the bottom-left.</span>
+    </label>
+    <div id="tutPreview"></div>
+    <p class="hint" id="tutPreviewHint" hidden>That card box shows its name, which printing was picked, its rarity,
+      and its current market price — the same information shown everywhere else in Grimoire.</p>
+    <div class="fields n2" id="tutAddFields" hidden>
+      <label>Quantity <input id="tutQty" type="number" value="1" min="1"></label>
+      <label>Location <select id="tutLoc"></select></label>
+    </div>
+    <button type="button" id="tutAddBtn" class="primary" hidden disabled>+ Add card</button>
+  </section>
+
+  <!-- Step 3: your inventory -->
+  <section class="tut-step" id="step3" hidden>
+    <h2>That's it — here's your inventory</h2>
+    <p class="tut-copy">Every card you add shows up like this, with a running value.</p>
+    <div class="tiles" id="tutTiles"></div>
+  </section>
+
+  <!-- Step 4: selling -->
+  <section class="tut-step" id="step4" hidden>
+    <h2>Selling a card</h2>
+    <div id="sellBiz">
+      <p class="tut-copy">"Listed" just means offered for sale — like a price tag, not a shipment. The card stays right
+        where it is until someone actually buys it. Mark a card "listed for sale" — press <b>Mark listed</b> on the
+        row below.</p>
+      <p class="tut-copy">Once you connect a marketplace (Settings → Integrations), Grimoire keeps this in sync
+        automatically instead of you tracking it by hand.</p>
+    </div>
+    <div id="sellSimple" hidden>
+      <p class="tut-copy">Selling cards is part of Grimoire's business setup, so you won't see a "Mark listed"
+        button while you're in Simple mode. That keeps things uncluttered if you only collect or sell the odd card.</p>
+      <p class="tut-copy">If you do want to track what's for sale, go to <b>Settings → Preferences</b> and untick
+        <b>Simple mode — hide advanced/business features</b>. The listing buttons and the marketplace connections
+        (Settings → Integrations) appear right away.</p>
+    </div>
+  </section>
+
+  <!-- Step 5: done -->
+  <section class="tut-step" id="step5" hidden>
+    <h2>That's the basics</h2>
+    <p class="tut-copy" id="tutSummary"></p>
+    <div id="tutBinder" hidden>
+      <p class="tut-copy">In Grimoire you make your own binders and boxes, and every card you add lives in one of
+        them. Let's make your first one now. Name it anything you like.</p>
+      <label>Name your first binder <input id="tutBinderName" placeholder="My Binder" maxlength="60" autocomplete="off"></label>
+      <p class="hint">Leave it blank to use "My Collection" instead. You can rename it or add more under Locations.</p>
+    </div>
+    <p class="tut-copy"><a href="/help.html">Read the full walkthrough →</a> for locations, receiving lots,
+      and the rest of what Grimoire can do.</p>
+  </section>
+
+  <!-- persistent demo inventory, shown from step 2 onward -->
+  <div id="tutDemoWrap" hidden>
+    <div class="list-wrap tut-demo-wrap">
+      <table class="list">
+        <thead><tr><th></th><th>Card</th><th class="hide-sm">Location</th><th class="num">Qty</th><th class="num">Price</th><th class="tut-listed-col">Listed</th></tr></thead>
+        <tbody id="tutDemoBody"></tbody>
+      </table>
+    </div>
+  </div>
+
+  <div id="tutMsg" class="status" role="status" aria-live="polite"></div>
+
+  <div class="tut-nav">
+    <button type="button" id="tutBack" class="ghost" hidden>← Back</button>
+    <span class="spacer"></span>
+    <button type="button" id="tutNext" class="primary" disabled>Next →</button>
+  </div>
+</div>
+
+<script src="/js/shipCost.js"></script>
+<script src="/js/priceRuleEngine.js"></script>
+<script src="/js/core.js"></script>
+<script src="/js/glossary.js"></script>
+<script src="/js/ui.js"></script>
+<script src="/tutorial.page.js"></script>
+</body>
+</html>

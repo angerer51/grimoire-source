@@ -1,0 +1,24 @@
+{
+  "name": "grimoire",
+  "version": "2026.11.21-01",
+  "private": true,
+  "description": "Grimoire - self-hosted Magic: The Gathering card inventory, warehouse and price history",
+  "license": "UNLICENSED",
+  "main": "server/index.js",
+  "scripts": {
+    "start": "node server/index.js",
+    "refresh-cards": "node server/index.js --refresh-cards",
+    "snapshot-prices": "node server/index.js --snapshot-prices",
+    "migrate-prices-to-sqlite": "node server/index.js --migrate-prices-to-sqlite",
+    "add-user": "node server/index.js --add-user",
+    "invite": "node server/index.js --invite",
+    "where": "node server/index.js --where",
+    "sql": "node tools/inventory-sql.js",
+    "check": "node --check server/index.js",
+    "test": "node --test"
+  },
+  "engines": {
+    "node": ">=22.13.0"
+  },
+  "dependencies": {}
+}

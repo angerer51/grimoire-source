@@ -1,0 +1,64 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<title>Trade Proposals · Grimoire</title>
+<link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'><rect width='32' height='32' rx='2' fill='%23151617'/><rect x='8' y='5' width='17' height='22' rx='1.5' fill='%231d1e21' stroke='%23f26b1d' stroke-width='2'/><path d='M11.6 5.8v20.4' stroke='%23f26b1d' stroke-width='1.6' opacity='.75'/><path d='M18.6 11.4l3.4 4.6-3.4 4.6-3.4-4.6z' fill='%23f26b1d'/></svg>">
+<link rel="manifest" href="/manifest.webmanifest">
+<link rel="apple-touch-icon" href="/icons/icon-192.png">
+<meta name="theme-color" content="#151617">
+<link rel="stylesheet" href="/css/app.css">
+</head>
+<body>
+
+<main>
+  <div class="sec-head">
+    <h1>Trade Proposals <a class="help-link" href="/help.html#friends-trading" title="Help for this page" aria-label="Help for this page"><svg class=ic aria-hidden=true><use href=/icons/sprite.svg#circle-help></use></svg></a></h1>
+    <div class="row">
+      <button id="btnRecordTrade"><svg class=ic aria-hidden=true><use href=/icons/sprite.svg#handshake></use></svg> Record a trade</button>
+      <button id="btnNewProposal" class="primary">+ New proposal</button>
+    </div>
+  </div>
+  <p class="page-intro">Offers you've sent and been sent, and trades you've made in person.</p>
+
+  <div class="tabs">
+    <button id="tabIncoming" class="seg active"><svg class=ic aria-hidden=true><use href=/icons/sprite.svg#download></use></svg> Incoming <span class="count" id="inCount">0</span></button>
+    <button id="tabOutgoing" class="seg"><svg class=ic aria-hidden=true><use href=/icons/sprite.svg#upload></use></svg> Outgoing</button>
+    <button id="tabRecorded" class="seg"><svg class=ic aria-hidden=true><use href=/icons/sprite.svg#handshake></use></svg> Recorded trades</button>
+  </div>
+
+  <div id="paneIncoming">
+    <section>
+      <div class="sec-head"><h2>Proposed to you <span class="muted" id="inHdr"></span></h2></div>
+      <div id="inList"></div>
+    </section>
+  </div>
+
+  <div id="paneOutgoing" hidden>
+    <section>
+      <div class="sec-head"><h2>Sent by you <span class="muted" id="outHdr"></span></h2></div>
+      <div id="outList"></div>
+    </section>
+  </div>
+
+  <div id="paneRecorded" hidden>
+    <section>
+      <div class="sec-head"><h2>Trades you recorded <span class="muted" id="recHdr"></span></h2></div>
+      <div id="recList"></div>
+    </section>
+  </div>
+</main>
+
+<script src="/js/shipCost.js"></script>
+<script src="/js/priceRuleEngine.js"></script>
+<script src="/js/core.js"></script>
+<script src="/js/glossary.js"></script>
+<script src="/js/ui.js"></script>
+<script src="/js/tradeCompose.js"></script>
+<script src="/js/tradeRecord.js"></script>
+<script src="/trades.page.js"></script>
+</body>
+</html>

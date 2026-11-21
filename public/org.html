@@ -1,0 +1,127 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<title>Organization · Grimoire</title>
+<link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'><rect width='32' height='32' rx='2' fill='%23151617'/><rect x='8' y='5' width='17' height='22' rx='1.5' fill='%231d1e21' stroke='%23f26b1d' stroke-width='2'/><path d='M11.6 5.8v20.4' stroke='%23f26b1d' stroke-width='1.6' opacity='.75'/><path d='M18.6 11.4l3.4 4.6-3.4 4.6-3.4-4.6z' fill='%23f26b1d'/></svg>">
+<link rel="manifest" href="/manifest.webmanifest">
+<link rel="apple-touch-icon" href="/icons/icon-192.png">
+<meta name="theme-color" content="#151617">
+<link rel="stylesheet" href="/css/app.css">
+</head>
+<body>
+
+<main>
+  <div class="sec-head"><h1>Organization</h1></div>
+
+  <section id="noOrgSection">
+    <div class="callout">
+      <span class="cico"><svg class=ic aria-hidden=true><use href=/icons/sprite.svg#building-2></use></svg></span><div class="cbody">
+        <h3>Running more than one store?</h3>
+        Create an organization to track each location as its own inventory, with employee accounts assigned to
+        whichever store(s) they work at. Your current collection becomes your first store's inventory —
+        nothing is lost, and its revision history moves with it.
+      </div>
+    </div>
+    <div class="form-row" style="margin-top:12px">
+      <label style="flex:1;min-width:220px">Organization name
+        <input id="orgName" placeholder="e.g. Acme Game Stores" autocomplete="off">
+      </label>
+      <button id="orgCreate" class="primary">Create organization</button>
+    </div>
+    <div id="orgCreateStatus" class="status"></div>
+  </section>
+
+  <section id="orgSection" hidden>
+    <div class="sec-head"><h2 id="orgTitle"></h2><span class="muted" id="orgRoleBadge"></span></div>
+
+    <div class="sec-head"><h3>Stores</h3></div>
+    <div class="list-wrap"><table class="list" data-sort>
+        <thead><tr><th>Name</th><th>Created</th><th></th></tr></thead>
+        <tbody id="storesBody"></tbody>
+    </table></div>
+    <div class="form-row" id="addStoreRow" hidden style="margin-top:10px">
+      <label style="flex:1;min-width:160px">New store name <input id="newStoreName" placeholder="Store 2" autocomplete="off"></label>
+      <button id="addStoreBtn" class="small">+ Add store</button>
+    </div>
+    <div id="storesStatus" class="status"></div>
+
+    <div id="archivedBox" hidden>
+      <div class="sec-head" style="margin-top:22px"><h3>Archived stores</h3></div>
+      <div class="hint" style="margin-top:0">Nobody can use an archived store. Its inventory and history are kept,
+        and <b>Restore</b> brings it back exactly as it was. Only an owner can archive or restore a store.</div>
+      <div class="list-wrap"><table class="list" data-sort>
+          <thead><tr><th>Name</th><th>Archived</th><th></th></tr></thead>
+          <tbody id="archivedBody"></tbody>
+      </table></div>
+    </div>
+
+    <div class="sec-head" style="margin-top:22px"><h3>Employees</h3></div>
+    <div class="list-wrap"><table class="list" data-sort>
+        <thead><tr><th>Username</th><th>Role</th><th>Stores</th><th></th></tr></thead>
+        <tbody id="membersBody"></tbody>
+    </table></div>
+
+    <div class="move-box" id="inviteBox" hidden style="margin-top:14px">
+      <strong>Invite an employee</strong>
+      <div class="hint" style="margin-top:2px">Creates a one-time invite code and sign-up link. It expires after 7 days.</div>
+      <div class="form-row" style="margin-top:8px">
+        <label>Role
+          <select id="inviteRole">
+            <option value="staff">Staff</option>
+            <option value="manager">Manager</option>
+            <option value="owner">Owner</option>
+          </select>
+        </label>
+        <label style="flex:1;min-width:160px">Note (optional) <input id="inviteNote" placeholder="for Jamie" autocomplete="off" maxlength="1000"></label>
+        <button id="inviteCreate" class="primary">Create invite</button>
+      </div>
+      <div class="form-row" id="inviteStoresRow"></div>
+      <div id="inviteStatus" class="status"></div>
+
+      <div class="sec-head" style="margin-top:14px"><h3>Outstanding invites</h3></div>
+      <div class="hint" id="invitesHint" style="margin-top:0"></div>
+      <div class="list-wrap"><table class="list" data-sort>
+          <thead><tr><th>Code</th><th>Role</th><th class="hide-sm">Stores</th><th class="hide-sm">Created by</th><th>Expires</th><th></th></tr></thead>
+          <tbody id="invitesBody"></tbody>
+      </table></div>
+      <div id="invitesStatus" class="status"></div>
+    </div>
+  </section>
+</main>
+
+<!-- ===================== Manage member ===================== -->
+<div class="modal-backdrop" id="memberModal" hidden>
+  <div class="modal" role="dialog" aria-modal="true" aria-label="Manage employee">
+    <h3 id="memberModalTitle">Manage employee</h3>
+    <div class="form-row" style="margin-top:8px">
+      <label style="flex:1">Role
+        <select id="memberRole">
+          <option value="staff">Staff</option>
+          <option value="manager">Manager</option>
+          <option value="owner">Owner</option>
+        </select>
+      </label>
+    </div>
+    <div id="memberStoresRow" class="form-row"></div>
+    <div id="memberModalStatus" class="status"></div>
+    <div class="form-row" style="margin-top:16px">
+      <button id="memberRemove" class="danger">Remove from organization</button>
+      <span class="spacer"></span>
+      <button id="memberCancel" class="ghost">Cancel</button>
+      <button id="memberSave" class="primary">Save</button>
+    </div>
+  </div>
+</div>
+
+<script src="/js/shipCost.js"></script>
+<script src="/js/priceRuleEngine.js"></script>
+<script src="/js/core.js"></script>
+<script src="/js/glossary.js"></script>
+<script src="/js/ui.js"></script>
+<script src="/org.page.js"></script>
+</body>
+</html>

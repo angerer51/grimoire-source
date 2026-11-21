@@ -1,0 +1,161 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<title>Returns · Grimoire</title>
+<link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'><rect width='32' height='32' rx='2' fill='%23151617'/><rect x='8' y='5' width='17' height='22' rx='1.5' fill='%231d1e21' stroke='%23f26b1d' stroke-width='2'/><path d='M11.6 5.8v20.4' stroke='%23f26b1d' stroke-width='1.6' opacity='.75'/><path d='M18.6 11.4l3.4 4.6-3.4 4.6-3.4-4.6z' fill='%23f26b1d'/></svg>">
+<link rel="manifest" href="/manifest.webmanifest">
+<link rel="apple-touch-icon" href="/icons/icon-192.png">
+<meta name="theme-color" content="#151617">
+<link rel="stylesheet" href="/css/app.css">
+</head>
+<body>
+
+<main>
+  <h1>Returns <a class="help-link" data-full-only href="/help.html#returns" title="Help for this page" aria-label="Help for this page"><svg class=ic aria-hidden=true><use href=/icons/sprite.svg#circle-help></use></svg></a></h1>
+  <p class="page-intro">Record a customer return and put the cards back.</p>
+
+  <div class="tabs">
+    <button id="tabNew" class="seg active"><svg class=ic aria-hidden=true><use href=/icons/sprite.svg#plus></use></svg> New return</button>
+    <button id="tabFloor" class="seg" data-full-only><svg class=ic aria-hidden=true><use href=/icons/sprite.svg#qr-code></use></svg> On the floor <span class="badge cap" id="retFloorCount" hidden></span></button>
+    <button id="tabHist" class="seg"><svg class=ic aria-hidden=true><use href=/icons/sprite.svg#clock></use></svg> History</button>
+  </div>
+
+  <div id="paneNew">
+  <div class="cols cols-3">
+    <!-- ===================== LEFT: find the card ===================== -->
+    <div class="col-left">
+      <section id="entrySection">
+        <div class="sec-head"><h2>Find the card</h2></div>
+        <div class="fields n2" id="entryFields">
+          <label class="span-all" style="position:relative">Card name
+            <input id="inSearch" placeholder="Start typing a card name…" autocomplete="off">
+            <div id="acList" class="ac-list" hidden></div>
+          </label>
+          <label class="span-all">Printing
+            <select id="inPrinting"><option value="">— pick a card first —</option></select>
+          </label>
+          <label>Quantity <input id="inQty" type="number" value="1" min="1"></label>
+          <label>Finish
+            <select id="inFoil"><option value="nonfoil">Non-foil</option><option value="foil">Foil</option><option value="etched">Etched foil</option></select>
+          </label>
+          <label>Condition <select id="inCondition"></select></label>
+          <label>Language <select id="inLang"></select></label>
+          <label class="span-all">Cost basis to restore — optional, restock returns only
+            <input id="inUnitCost" type="number" min="0" step="0.01" placeholder="leave blank for no cost basis">
+          </label>
+        </div>
+        <div class="toolbar" id="entryToolbar" style="margin-top:13px">
+          <span class="spacer"></span>
+          <button id="btnAddLine" class="primary">+ Add to return</button>
+        </div>
+        <div id="entryStatus" class="status"></div>
+      </section>
+    </div>
+
+    <!-- ===================== CENTER ===================== -->
+    <div class="col-center">
+      <section id="returnSection">
+        <div class="sec-head"><h2>This return</h2></div>
+        <div class="grid3">
+          <label class="span-all" style="position:relative">Order # / label — optional
+            <input id="retOrderLabel" autocomplete="off" placeholder="type to search a fetched Manapool order, or leave as free text">
+            <div id="orderAcList" class="ac-list" hidden></div>
+          </label>
+          <label>Buyer — optional <input id="retBuyer" autocomplete="off" placeholder="who it came from"></label>
+          <label>Return ID <input id="retId" autocomplete="off" placeholder="auto"></label>
+          <label>Goes to <select id="retLoc"></select></label>
+          <label>Disposition
+            <select id="retDisposition">
+              <option value="restock">Restock — sellable again</option>
+              <option value="damaged">Damaged / miscellaneous — written off</option>
+              <option value="other">Other</option>
+            </select>
+          </label>
+          <label>Refund amount ($) — optional <input id="retRefund" type="number" min="0" step="0.01" placeholder="0.00"></label>
+          <label class="span-all">Reason — optional <input id="retReason" autocomplete="off" maxlength="1000" placeholder="e.g. wrong card sent, damaged in shipping, buyer changed mind"></label>
+          <label class="span-all">Note <input id="retNote" autocomplete="off" maxlength="1000" placeholder="anything else worth remembering"></label>
+        </div>
+        <div id="origOrderInfo" class="callout" hidden style="margin-top:10px">
+          <span class="cico"><svg class=ic aria-hidden=true><use href=/icons/sprite.svg#link></use></svg></span>
+          <div class="cbody">
+            <h3>Original order</h3>
+            <div id="origOrderMeta"></div>
+            <div id="origOrderLines" style="margin-top:6px"></div>
+            <div class="modal-actions" style="margin-top:8px"><button id="retOrderCards" class="small">Add the order's cards to this return</button></div>
+          </div>
+        </div>
+        <div class="list-wrap" style="margin-top:10px">
+          <table class="list" id="retLinesTable" data-sort>
+            <thead><tr>
+              <th><span class="sr-only">Image</span></th><th>Card</th><th>Printing</th><th>Finish</th><th class="num">Qty</th>
+              <th class="num">Cost ea.</th><th><span class="sr-only">Actions</span></th>
+            </tr></thead>
+            <tbody id="retLinesBody"><tr><td colspan="7" class="empty">Nothing added yet — find a card on the left.</td></tr></tbody>
+          </table>
+        </div>
+        <div class="modal-actions" style="margin-top:12px">
+          <button id="retDiscard">Clear</button>
+          <span class="spacer"></span>
+          <button id="retFloor" data-full-only title="Opens it for Warehouse Mode: the phone books what comes back, and you close it here">Send to the floor</button>
+          <button id="retPost" class="gold">Post return into inventory</button>
+        </div>
+      </section>
+
+    </div>
+
+    <!-- ===================== RIGHT: preview ===================== -->
+    <div class="col-right">
+      <aside class="card-panel sticky" id="preview" aria-label="Card preview"></aside>
+    </div>
+  </div>
+  </div>
+
+  <!-- Returns open for Warehouse Mode (#411) -->
+  <div id="paneFloor" hidden>
+      <section id="floorSection" data-full-only>
+        <div class="sec-head">
+          <h2>Returns on the floor</h2>
+          <span class="muted" id="floorHdr"></span>
+        </div>
+        <p class="hint">Fill in a return on New return and press Send to the floor: the phone books what comes back, restock or damaged. Close it here to settle the cost and refund.</p>
+        <div class="list-wrap">
+          <table class="list" id="floorTable">
+            <thead><tr><th>Return</th><th class="hide-sm">Order</th><th class="num">Expected</th><th class="num">Booked</th>
+              <th class="num">To put away</th><th><span class="sr-only">Actions</span></th></tr></thead>
+            <tbody id="floorBody"></tbody>
+          </table>
+        </div>
+      </section>
+
+  </div>
+
+  <!-- Return history -->
+  <div id="paneHist" hidden>
+      <section>
+        <div class="sec-head">
+          <h2>Return history</h2>
+          <span class="muted" id="retHdr"></span>
+        </div>
+        <div class="list-wrap">
+          <table class="list" id="retTable" data-sort>
+            <thead><tr><th>Return</th><th>When</th><th>Order</th><th>Buyer</th><th>Disposition</th>
+              <th class="num">Qty</th><th class="num">Refund</th><th><span class="sr-only">Actions</span></th></tr></thead>
+            <tbody id="retBody"></tbody>
+          </table>
+        </div>
+      </section>
+  </div>
+</main>
+
+<script src="/js/shipCost.js"></script>
+<script src="/js/priceRuleEngine.js"></script>
+<script src="/js/core.js"></script>
+<script src="/js/glossary.js"></script>
+<script src="/js/ui.js"></script>
+<script src="/returns.page.js"></script>
+</body>
+</html>

@@ -1,0 +1,115 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<title>Social · Grimoire</title>
+<link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'><rect width='32' height='32' rx='2' fill='%23151617'/><rect x='8' y='5' width='17' height='22' rx='1.5' fill='%231d1e21' stroke='%23f26b1d' stroke-width='2'/><path d='M11.6 5.8v20.4' stroke='%23f26b1d' stroke-width='1.6' opacity='.75'/><path d='M18.6 11.4l3.4 4.6-3.4 4.6-3.4-4.6z' fill='%23f26b1d'/></svg>">
+<link rel="manifest" href="/manifest.webmanifest">
+<link rel="apple-touch-icon" href="/icons/icon-192.png">
+<meta name="theme-color" content="#151617">
+<link rel="stylesheet" href="/css/app.css">
+</head>
+<body>
+
+<main>
+  <h1>Social <a class="help-link" href="/help.html#friends-trading" title="Help for this page" aria-label="Help for this page"><svg class=ic aria-hidden=true><use href=/icons/sprite.svg#circle-help></use></svg></a></h1>
+  <p class="page-intro">Friends, sharing and trades with other collectors.</p>
+
+  <section id="sharing">
+    <div class="sec-head">
+      <h2>Friends &amp; sharing</h2>
+      <button id="btnNewProposal" class="primary">+ New proposal</button>
+    </div>
+    <div class="hint" style="margin-top:0">Sharing is read-only: friends see a summary or the full card list, never your locations or cost basis.
+      <a href="/help.html#friends-trading">More in Help</a></div>
+    <div id="actFromNotice" hidden></div>
+    <div id="actFromArea" hidden>
+      <div class="form-row" style="margin-top:12px">
+        <label style="flex:1;min-width:220px">Share and trade from
+          <select id="actFrom"></select>
+        </label>
+      </div>
+      <div class="hint" id="actFromHint" style="margin-top:0"></div>
+      <div id="actFromOffer"></div>
+    </div>
+    <div class="form-row" style="margin-top:12px">
+      <label style="flex:1;min-width:170px">Send a friend request
+        <input id="friendPick" type="text" placeholder="their username" autocomplete="off" autocapitalize="off" spellcheck="false">
+      </label>
+      <button id="friendAdd" class="primary">Send request</button>
+    </div>
+    <div class="form-row">
+      <label style="flex:1;min-width:200px">Everyone else on this server sees
+        <select id="defaultShare">
+          <option value="off">nothing (recommended)</option>
+          <option value="summary">a summary</option>
+          <option value="full">the full card list</option>
+        </select>
+      </label>
+    </div>
+
+    <h3 id="requests" style="margin-top:16px">Requests</h3>
+    <div class="list-wrap">
+      <table class="list" data-sort><thead><tr><th>Asked you</th><th class="hide-sm">When</th><th></th></tr></thead>
+        <tbody id="reqInBody"></tbody></table>
+    </div>
+    <div class="list-wrap" style="margin-top:10px">
+      <table class="list" data-sort><thead><tr><th>You asked</th><th class="hide-sm">When</th><th></th></tr></thead>
+        <tbody id="reqOutBody"></tbody></table>
+    </div>
+    <div class="hint" id="reqOutHint" style="margin-top:4px"></div>
+
+    <h3 id="friends" style="margin-top:16px">Friends</h3>
+    <div class="list-wrap">
+      <table class="list" data-sort><thead><tr><th>Friend</th><th>They see</th><th></th></tr></thead>
+        <tbody id="friendBody"></tbody></table>
+    </div>
+    <h3 style="margin-top:16px">Shared with me</h3>
+    <div class="list-wrap">
+      <table class="list" data-sort><thead><tr><th>User</th><th>I see</th><th></th></tr></thead>
+        <tbody id="sharedBody"></tbody></table>
+    </div>
+    <div id="shareStatus" class="status"></div>
+  </section>
+
+  <section id="inviteFriend" hidden>
+    <div class="sec-head">
+      <h2>Invite a friend <span class="muted" id="inviteLeft"></span></h2>
+      <button id="inviteMake" class="primary">Create invite link</button>
+    </div>
+    <div class="hint" style="margin-top:0">Each link works once. Whoever signs up with it becomes your friend straight away.
+      <a href="/help.html#invite-friend">More in Help</a></div>
+    <div id="inviteOff" class="callout warn" hidden>
+      <span class="cico"><svg class=ic aria-hidden=true><use href=/icons/sprite.svg#triangle-alert></use></svg></span>
+      <div class="cbody" id="inviteOffText"></div>
+    </div>
+    <div class="list-wrap" style="margin-top:10px">
+      <table class="list" data-sort><thead><tr><th>Link</th><th>Status</th><th class="hide-sm">Made</th><th data-nosort></th></tr></thead>
+        <tbody id="inviteRows"></tbody></table>
+    </div>
+    <div id="inviteStatus" class="status"></div>
+  </section>
+</main>
+
+<!-- ===================== Friend's collection (folded in from the old friend.html) ===================== -->
+<div class="modal-backdrop" id="friendViewModal" hidden>
+  <div class="modal wide" role="dialog" aria-modal="true" aria-label="Friend's collection">
+    <h3 id="fvTitle">Friend's collection</h3>
+    <p class="muted" id="fvMeta"></p>
+    <div id="fvBody"></div>
+    <div class="modal-actions" style="margin-top:14px"><span class="spacer"></span><button id="fvClose">Close</button></div>
+  </div>
+</div>
+
+<script src="/js/shipCost.js"></script>
+<script src="/js/priceRuleEngine.js"></script>
+<script src="/js/core.js"></script>
+<script src="/js/glossary.js"></script>
+<script src="/js/ui.js"></script>
+<script src="/js/tradeCompose.js"></script>
+<script src="/social.page.js"></script>
+</body>
+</html>

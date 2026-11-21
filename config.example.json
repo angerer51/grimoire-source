@@ -1,0 +1,97 @@
+{
+  "port": 8787,
+  "host": "0.0.0.0",
+  "baseUrl": "http://localhost:8787",
+
+  "dataDir": "",
+
+  "deploy": { "host": "", "dir": "/opt/grimoire", "user": "grimoire" },
+
+  "registration": "invite",
+  "sessionDays": 30,
+  "sessionIdleDays": 7,
+  "secureCookie": false,
+  "trustProxy": false,
+
+  "contactEmail": "you@example.com",
+
+  "cards": {
+    "bulkType": "default_cards",
+    "refreshHourLocal": 4,
+    "liveFallback": true,
+    "requestsPerSecond": 8,
+    "keepOracleText": true,
+    "priceSource": "scryfall"
+  },
+
+  "prices": {
+    "snapshotHourLocal": 5,
+    "mtgjsonHourLocal": 9,
+    "mtgjsonMinuteLocal": 30,
+    "keepDays": 400,
+    "mpSalesHourLocal": 18,
+    "mpSalesKeepDays": 90,
+    "mpSalesTopupHours": 4,
+    "mpSalesTopupMax": 300
+  },
+
+  "audit": {
+    "keepDays": 90
+  },
+
+  "github": {
+    "syncMinutes": 15
+  },
+
+  "manapool": {
+    "enabled": false,
+    "baseUrl": "https://manapool.com/api/v1/",
+    "emailHeader": "X-ManaPool-Email",
+    "tokenHeader": "X-ManaPool-Access-Token",
+    "oauth": { "authBase": "https://auth.manapool.com" },
+    "paths": {
+      "inventory": "seller/inventory",
+      "createListing": "seller/inventory/scryfall_id",
+      "listing": "seller/inventory/scryfall_id/{scryfall_id}",
+      "createSealedListing": "seller/inventory/product",
+      "orders": "seller/orders",
+      "order": "seller/orders/{id}",
+      "orderFulfillment": "seller/orders/{id}/fulfillment",
+      "buyerOrders": "buyer/orders",
+      "buyerOrder": "buyer/orders/{id}",
+      "buyerReceived": "buyer/seller-orders/{id}/received",
+      "productsSingles": "products/singles",
+      "pricesSingles": "prices/singles",
+      "pricesSealed": "prices/sealed"
+    }
+  },
+
+  "pitneyBowes": {
+    "enabled": false,
+    "baseUrl": "https://api.pitneybowes.com",
+    "carrier": "USPS",
+    "service": "PM",
+    "parcelType": "PKG",
+    "paths": {
+      "token": "/oauth/token",
+      "shipments": "/shippingservices/v1/shipments"
+    },
+    "from": {
+      "name": "",
+      "company": "",
+      "addressLines": [""],
+      "cityTown": "",
+      "stateProvince": "",
+      "postalCode": "",
+      "countryCode": "US",
+      "phone": "",
+      "email": ""
+    },
+    "parcel": {
+      "lengthIn": 9,
+      "widthIn": 6,
+      "heightIn": 1,
+      "weightOz": 3
+    }
+  }
+}

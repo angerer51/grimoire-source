@@ -1,0 +1,107 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<title>Walk-in Order · Grimoire</title>
+<link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'><rect width='32' height='32' rx='2' fill='%23151617'/><rect x='8' y='5' width='17' height='22' rx='1.5' fill='%231d1e21' stroke='%23f26b1d' stroke-width='2'/><path d='M11.6 5.8v20.4' stroke='%23f26b1d' stroke-width='1.6' opacity='.75'/><path d='M18.6 11.4l3.4 4.6-3.4 4.6-3.4-4.6z' fill='%23f26b1d'/></svg>">
+<link rel="manifest" href="/manifest.webmanifest">
+<link rel="apple-touch-icon" href="/icons/icon-192.png">
+<meta name="theme-color" content="#151617">
+<link rel="stylesheet" href="/css/app.css">
+</head>
+<body>
+
+<main>
+  <h1>Walk-in Order <a class="help-link" href="/help.html#walk-in" title="Help for this page" aria-label="Help for this page"><svg class=ic aria-hidden=true><use href=/icons/sprite.svg#circle-help></use></svg></a></h1>
+  <p class="page-intro">Sell cards to a customer at the counter.</p>
+
+  <div class="tabs">
+    <button id="tabNewOrder" class="seg active"><svg class=ic aria-hidden=true><use href=/icons/sprite.svg#shopping-bag></use></svg> New order</button>
+    <button id="tabWaiting" class="seg"><svg class=ic aria-hidden=true><use href=/icons/sprite.svg#hourglass></use></svg> Waiting <span class="badge cap" id="wiWaitCount" hidden></span></button>
+  </div>
+
+  <div id="paneNewOrder">
+  <div class="wi-split">
+  <section>
+    <div class="sec-head"><h2>Find cards</h2><span class="muted" id="wiFindHdr"></span></div>
+    <div class="form-row">
+      <input id="wiSearch" placeholder="Card name, set code or number…" autocomplete="off" aria-label="Search your stock" class="wi-search">
+    </div>
+    <div class="hint">Searches stock in the locations you sell from, as Manapool orders do.</div>
+    <div class="list-wrap" style="margin-top:10px">
+      <table class="list" id="wiFindTable" data-sort>
+        <thead><tr><th><span class="sr-only">Image</span></th><th>Card</th><th class="hide-sm">Set</th><th class="hide-sm">#</th>
+          <th>Cond.</th><th>Finish</th><th class="hide-sm">Lang</th><th class="num">Free</th><th class="num">Market</th>
+          <th><span class="sr-only">Actions</span></th></tr></thead>
+        <tbody id="wiFindBody"></tbody>
+      </table>
+    </div>
+  </section>
+
+  <section>
+    <div class="sec-head"><h2>This order</h2><span class="muted" id="wiOrderHdr"></span></div>
+    <div class="fields n2">
+      <label>Customer — optional
+        <input id="wiCustomer" list="wiCustomerList" autocomplete="off" maxlength="200" placeholder="Leave blank for an anonymous walk-in">
+        <datalist id="wiCustomerList"></datalist>
+      </label>
+      <label id="wiEmailWrap" hidden>Email — optional
+        <input id="wiEmail" type="email" autocomplete="off" maxlength="254" placeholder="e.g. sam@example.com">
+      </label>
+    </div>
+    <div class="hint" id="wiCustomerHint"></div>
+    <div class="list-wrap" style="margin-top:10px">
+      <table class="list" id="wiLinesTable">
+        <thead><tr><th>Card</th><th class="hide-sm">Set</th><th>Cond.</th><th class="hide-sm">Finish</th>
+          <th class="num">Qty</th><th class="num">Price each</th><th class="num">Line total</th>
+          <th><span class="sr-only">Actions</span></th></tr></thead>
+        <tbody id="wiLinesBody"></tbody>
+        <tfoot id="wiLinesFoot"></tfoot>
+      </table>
+    </div>
+    <div class="wi-finish">
+      <div class="mode-toggle" role="group" aria-label="How is this order done?">
+        <button id="wiModePick" class="seg active" aria-pressed="true">Send to be picked</button>
+        <button id="wiModeNow" class="seg" aria-pressed="false">Finish now</button>
+      </div>
+      <label id="wiPayWrap" hidden>Paid by
+        <select id="wiPay"><option value="">Choose…</option></select>
+      </label>
+    </div>
+    <div class="hint" id="wiModeHint"></div>
+    <div class="modal-actions" style="margin-top:12px">
+      <button id="wiClear">Clear order</button>
+      <span class="spacer"></span>
+      <button id="wiSubmit" class="gold">Send to be picked</button>
+    </div>
+    <div id="wiStatus" class="status"></div>
+  </section>
+
+  </div>
+  </div>
+
+  <div id="paneWaiting" hidden>
+  <section>
+    <div class="sec-head"><h2>Counter orders waiting</h2><span class="muted" id="wiWaitHdr"></span></div>
+    <div class="list-wrap">
+      <table class="list" id="wiWaitTable" data-sort>
+        <thead><tr><th>Ticket</th><th>Customer</th><th class="hide-sm">Entered</th><th class="num">Cards</th>
+          <th class="num">Total</th><th>Status</th></tr></thead>
+        <tbody id="wiWaitBody"></tbody>
+      </table>
+    </div>
+  </section>
+  </div>
+</main>
+
+<script src="/js/shipCost.js"></script>
+<script src="/js/priceRuleEngine.js"></script>
+<script src="/js/core.js"></script>
+<script src="/js/glossary.js"></script>
+<script src="/js/ui.js"></script>
+<script src="/walk-in.page.js"></script>
+</body>
+</html>

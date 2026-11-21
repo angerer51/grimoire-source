@@ -1,0 +1,374 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<title>Receive · Grimoire</title>
+<link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'><rect width='32' height='32' rx='2' fill='%23151617'/><rect x='8' y='5' width='17' height='22' rx='1.5' fill='%231d1e21' stroke='%23f26b1d' stroke-width='2'/><path d='M11.6 5.8v20.4' stroke='%23f26b1d' stroke-width='1.6' opacity='.75'/><path d='M18.6 11.4l3.4 4.6-3.4 4.6-3.4-4.6z' fill='%23f26b1d'/></svg>">
+<link rel="manifest" href="/manifest.webmanifest">
+<link rel="apple-touch-icon" href="/icons/icon-192.png">
+<meta name="theme-color" content="#151617">
+<link rel="stylesheet" href="/css/app.css">
+</head>
+<body>
+
+<main>
+  <h1>Receiving <a class="help-link" href="/help.html#receiving" title="Help for this page" aria-label="Help for this page"><svg class=ic aria-hidden=true><use href=/icons/sprite.svg#circle-help></use></svg></a></h1>
+  <p class="page-intro" id="kindsIntro">Pick where the stock came from, then add each card or product.</p>
+
+  <div class="tabs" id="kinds" aria-label="Where it came from">
+    <button id="srcMine" class="seg active" title="Cards you already own: no cost"><svg class=ic aria-hidden=true><use href=/icons/sprite.svg#archive></use></svg> Already mine</button>
+    <button id="srcBought" class="seg" title="A purchase: one receipt, the money spread across every line"><svg class=ic aria-hidden=true><use href=/icons/sprite.svg#receipt></use></svg> Bought</button>
+    <button id="srcManapool" class="seg" title="Fill a lot receipt from an order you bought on Mana Pool"><svg class=ic aria-hidden=true><use href=/icons/sprite.svg#shopping-bag></use></svg> Mana Pool order</button>
+    <button id="srcFile" class="seg" title="A Grimoire transfer file or a TCGplayer Pull Sheet"><svg class=ic aria-hidden=true><use href=/icons/sprite.svg#file-text></use></svg> File</button>
+  </div>
+
+  <div class="cols cols-3">
+    <!-- ===================== LEFT: entry ===================== -->
+    <div class="col-left">
+      <section id="entrySection">
+        <div class="sec-head">
+          <h2 id="entryTitle">Add a card</h2>
+          <div class="mode-toggle" id="itemToggle" data-full-only aria-label="What you are adding">
+            <button id="itemCard" class="seg active">Card</button>
+            <button id="itemSealed" class="seg">Sealed</button>
+          </div>
+        </div>
+        <div id="cardEntry">
+        <div class="mode-toggle">
+          <button id="modeSearch" class="seg active">Search by name</button>
+          <button id="modeManual" class="seg">Set + number</button>
+          <button id="modeImport" class="seg">Paste a list</button>
+        </div>
+
+        <div class="fields n2" id="entryFields">
+          <label id="lblName" class="span-all" style="position:relative">Card name
+            <input id="inSearch" placeholder="Start typing a card name…" autocomplete="off">
+            <div id="acList" class="ac-list" hidden></div>
+          </label>
+          <label id="lblPrint" class="span-all">Printing
+            <input id="inPrintFilter" aria-label="Narrow the printings" placeholder="Narrow the list: set name, set code or year" autocomplete="off" hidden>
+            <select id="inPrinting"><option value="">— pick a card first —</option></select>
+            <span class="hint" id="inPrintTip" hidden>Newest first. Quicker: switch to <b>Set + number</b> and type what's printed at the bottom-left of your card.</span>
+          </label>
+          <label id="lblSetSticky" hidden class="row span-all keep-toggle" title="Keep the set code filled in after you add a card, so a run of cards from the same set doesn't need it retyped">
+            <input type="checkbox" id="inSetSticky" tabindex="-1" checked> <svg class="ic keep-off" aria-hidden=true><use href=/icons/sprite.svg#lock-open></use></svg><svg class="ic keep-on" aria-hidden=true><use href=/icons/sprite.svg#lock></use></svg> Keep set code after adding
+          </label>
+          <label id="lblSet" hidden>Set code <input id="inSet" placeholder="e.g. neo" autocomplete="off"></label>
+          <label id="lblNum" hidden>Collector # <input id="inNum" placeholder="e.g. 147 or 147/271" autocomplete="off"></label>
+          <label>Quantity <input id="inQty" type="number" value="1" min="1"></label>
+          <div class="keep-field">
+            <label>Finish
+              <select id="inFoil"><option value="nonfoil">Non-foil</option><option value="foil">Foil</option><option value="etched">Etched foil</option></select>
+            </label>
+            <label class="keep-lock keep-toggle" title="Keep finish after adding"><input type="checkbox" id="keepFinish" tabindex="-1" aria-label="Keep finish after adding"><svg class="ic keep-off" aria-hidden=true><use href=/icons/sprite.svg#lock-open></use></svg><svg class="ic keep-on" aria-hidden=true><use href=/icons/sprite.svg#lock></use></svg></label>
+            <span class="hint" id="keepFinishNote" hidden></span>
+          </div>
+          <div class="keep-field"><label>Condition <select id="inCondition"></select></label><label class="keep-lock keep-toggle" title="Keep condition after adding"><input type="checkbox" id="keepCondition" tabindex="-1" aria-label="Keep condition after adding"><svg class="ic keep-off" aria-hidden=true><use href=/icons/sprite.svg#lock-open></use></svg><svg class="ic keep-on" aria-hidden=true><use href=/icons/sprite.svg#lock></use></svg></label></div>
+          <div class="keep-field"><label>Language <select id="inLang"></select></label><label class="keep-lock keep-toggle" title="Keep language after adding"><input type="checkbox" id="keepLang" tabindex="-1" aria-label="Keep language after adding"><svg class="ic keep-off" aria-hidden=true><use href=/icons/sprite.svg#lock-open></use></svg><svg class="ic keep-on" aria-hidden=true><use href=/icons/sprite.svg#lock></use></svg></label></div>
+          <div class="keep-field"><label>Location <select id="inLoc"></select></label><label class="keep-lock keep-toggle" title="Keep location after adding"><input type="checkbox" id="keepLoc" tabindex="-1" aria-label="Keep location after adding"><svg class="ic keep-off" aria-hidden=true><use href=/icons/sprite.svg#lock-open></use></svg><svg class="ic keep-on" aria-hidden=true><use href=/icons/sprite.svg#lock></use></svg></label></div>
+          <label id="lotLineRow" class="span-all" hidden>Cost each — optional, overrides the spread
+            <input id="inLineCost" type="number" min="0" step="0.01" placeholder="leave blank to spread the lot price">
+          </label>
+        </div>
+        <div class="toolbar" id="entryToolbar" style="margin-top:13px">
+          <label class="row" data-full-only title="Put the card where this location's putaway rules say it belongs">
+            <input type="checkbox" id="autoPutaway"> <svg class=ic aria-hidden=true><use href=/icons/sprite.svg#package></use></svg> Location from the putaway rules
+          </label>
+          <span class="faint" id="autoPutawayStoreNote" hidden>Set by your store's managers.</span>
+          <span class="spacer"></span>
+          <span class="picked-note" id="pickedNote" hidden><img id="pickedThumb" alt="" width="30" height="42" hidden><span id="pickedName"></span></span>
+          <button id="btnAdd" class="primary">Add card</button>
+        </div>
+        <div class="hint" id="trayHint" hidden></div>
+        </div>
+
+        <!-- Sealed product (full mode only): the Card / Sealed switch above -->
+        <div id="sealedEntry" hidden>
+          <div class="fields n2">
+            <label class="span-all" style="position:relative">Product name
+              <input id="sldSearch" placeholder="Start typing a product name…" autocomplete="off">
+              <div id="sldAcList" class="ac-list" hidden></div>
+            </label>
+            <label>Quantity <input id="sldQty" type="number" value="1" min="1"></label>
+            <label>Location <select id="sldLoc"></select></label>
+            <label id="sldCostRow" class="span-all" hidden>Cost each — optional, overrides the spread
+              <input id="sldCost" type="number" min="0" step="0.01" placeholder="leave blank to spread the lot price">
+            </label>
+          </div>
+          <div class="toolbar" style="margin-top:13px">
+            <span class="spacer"></span>
+            <span class="picked-note" id="sldPickedNote" hidden><span id="sldPickedName"></span></span>
+            <button id="sldAdd" class="primary">Add sealed product</button>
+          </div>
+        </div>
+        <div id="entryStatus" class="status"></div>
+
+        <div id="queueBox" class="queue-box" hidden>
+          <div class="queue-head">
+            <b id="queueTitle">Add queue</b><span class="spacer"></span>
+            <button id="queueClear">Clear finished</button>
+          </div>
+          <div id="queueList"></div>
+        </div>
+
+        <!-- Paste a list or a card-list file (Already mine only: no cost basis) -->
+        <section id="csvImportSection" hidden>
+          <div class="hint" style="margin-top:0">One card per line, like <b>4 Lightning Bolt (M10) 146</b>.
+            <a href="/help.html#receive-paste">More in Help</a></div>
+          <label class="span-all" style="margin-top:8px">Pasted list
+            <textarea id="pasteText" rows="6" placeholder="4 Lightning Bolt (M10) 146&#10;1 Sol Ring (C21) 263"></textarea></label>
+          <div class="form-row" style="margin-top:8px"><button id="pasteGo" class="primary">Preview pasted list</button></div>
+          <div class="hint" style="margin-top:12px">Or choose a card list file: ManaBox, Moxfield and Archidekt exports work as they are.
+            <a href="/help.html#receive-csv">More in Help</a></div>
+          <div class="form-row" style="margin-top:8px">
+            <button id="csvPick">Choose a .csv or .tsv file…</button>
+            <button id="csvClear">Clear</button>
+            <button id="csvTemplate" class="ghost">Download a template</button>
+          </div>
+          <div id="csvSummary" class="status"></div>
+          <div id="csvDetail"></div>
+          <div id="csvLast"></div>
+          <div id="csvOptions" hidden>
+            <div class="fields n2" style="margin-top:10px">
+              <label class="row"><input type="checkbox" id="csvFetch" checked> Look up each row on Scryfall
+                (canonical name, price, card data)</label>
+              <label>New locations get created as <select id="csvLocType"></select></label>
+              <label id="csvDestRow" hidden class="span-all">Destination for row(s) with no location
+                <select id="csvDest"></select></label>
+            </div>
+            <div class="modal-actions" style="margin-top:10px">
+              <span id="csvPickNote" class="muted" role="status"></span>
+              <span class="spacer"></span>
+              <button id="csvGo" class="gold" disabled>Import</button>
+            </div>
+          </div>
+        </section>
+      </section>
+
+      <!-- Mana Pool purchases (#353): pick an order, it becomes a lot receipt -->
+      <section id="mpSection" hidden>
+        <div class="sec-head">
+          <h2>Mana Pool purchases</h2>
+          <button id="mpRefresh" class="small" title="Load your purchases again" aria-label="Load your purchases again"><svg class=ic aria-hidden=true><use href=/icons/sprite.svg#refresh-cw></use></svg></button>
+        </div>
+        <div class="hint" style="margin-top:0">Orders you bought, newest first. Pick one to fill a lot receipt.
+          <a href="/help.html#receive-manapool">More in Help</a></div>
+        <div class="fields n2" style="margin-top:10px">
+          <label>Put everything in <select id="mpDest"></select></label>
+          <label class="row span-all"><input type="checkbox" id="mpPutaway"> Use the putaway rules per card instead</label>
+        </div>
+        <div id="mpStatus" class="status"></div>
+        <div id="mpList" class="feed"></div>
+        <div class="form-row" style="margin-top:8px"><button id="mpShowDone" class="mp-toggle" type="button" hidden aria-pressed="false"></button></div>
+        <div class="form-row" style="margin-top:8px"><button id="mpMore" hidden>Load older orders</button></div>
+      </section>
+
+      <!-- Transfer import -->
+      <section id="transferSection" hidden>
+        <div class="sec-head">
+          <h2>Receive a file</h2>
+        </div>
+        <div class="mode-toggle">
+          <button id="modeXferFile" class="seg active">Grimoire transfer file</button>
+          <button id="modeTcgSheet" class="seg">TCGplayer Pull Sheet</button>
+        </div>
+
+        <div id="xferFileSection">
+          <div class="hint" style="margin-top:0">A file another Grimoire user exported from <b>Inventory → Export → Transfer file</b>.
+            <a href="/help.html#receive-transfer">More in Help</a></div>
+          <div class="form-row" style="margin-top:12px">
+            <button id="xferPick" class="primary">Choose a transfer file…</button>
+            <button id="xferClear">Clear</button>
+          </div>
+          <div id="xferSummary" class="status"></div>
+        </div>
+
+        <div id="tcgSheetSection" hidden>
+          <div class="hint" style="margin-top:0">A CSV exported from TCGplayer's <b>Manage Lists → Pull Sheet</b>. Every card goes into the location picked below.
+            <a href="/help.html#receive-pullsheet">More in Help</a></div>
+          <div class="fields n2" style="margin-top:12px">
+            <label>Destination location <select id="tcgDest"></select></label>
+          </div>
+          <div class="form-row" style="margin-top:12px">
+            <button id="tcgPick" class="primary">Choose a Pull Sheet .csv…</button>
+            <button id="tcgClear">Clear</button>
+          </div>
+          <div id="tcgSummary" class="status"></div>
+          <div id="tcgDetail"></div>
+          <div class="modal-actions" style="margin-top:10px" id="tcgActions" hidden>
+            <span class="spacer"></span>
+            <button id="tcgGo" class="gold" disabled>Import</button>
+          </div>
+        </div>
+        <div class="hint">A card list from ManaBox, Moxfield or a spreadsheet goes in under
+          <a href="/receive.html?mode=import" id="xferToPaste">Already mine → Paste a list</a>.</div>
+      </section>
+    </div>
+
+    <!-- ===================== CENTER ===================== -->
+    <div class="col-center">
+      <!-- Lot receipt header -->
+      <!-- One box: the receipt being built, and (Bought only, business mode) the
+           receipts open on the floor, as two small tabs (#444). -->
+      <section id="lotSection" hidden>
+        <div class="tabs" id="rcptTabs" hidden>
+          <button id="rcptTabThis" class="seg active" type="button" aria-selected="true">This receipt</button>
+          <button id="rcptTabFloor" class="seg" type="button" aria-selected="false">On the floor <span class="badge cap" id="floorCount" hidden></span></button>
+        </div>
+        <div id="lotPane">
+        <div class="sec-head">
+          <h2>Lot receipt</h2>
+          <button id="lotNewDraft" class="small">+ New lot</button>
+          <span class="muted" id="lotIdLabel"></span>
+        </div>
+        <div class="tabs" id="lotDraftTabs"></div>
+        <div class="grid3">
+          <label>Receipt ID <input id="lotId" autocomplete="off" placeholder="auto"></label>
+          <label>Bought from <input id="lotSource" autocomplete="off" placeholder="e.g. Craigslist pickup, LGS bulk"></label>
+          <label>Date <input id="lotDate" type="date"></label>
+          <label>Total spent on the lot ($) <input id="lotSpend" type="number" min="0" step="0.01" placeholder="0.00"></label>
+          <label>Spread the money by
+            <select id="lotAlloc">
+              <option value="market">market value (recommended)</option>
+              <option value="even">evenly per card</option>
+              <option value="paid" id="lotAllocPaid" hidden disabled>price paid (Mana Pool)</option>
+            </select>
+            <span class="faint" id="lotAllocStoreNote" hidden>Set by your store's managers.</span>
+          </label>
+          <label>Note <input id="lotNote" autocomplete="off" maxlength="1000" placeholder="anything worth remembering"></label>
+        </div>
+        <div class="form-row" id="lotMpRow" hidden style="margin-top:8px">
+          <label class="row" title="When you post, tell Mana Pool these packages arrived"><input type="checkbox" id="lotMpMark" checked> Also mark received on Mana Pool</label>
+          <span class="muted" id="lotMpInfo"></span>
+        </div>
+        <div class="money-strip" id="lotStrip"></div>
+        <div class="cost-note" id="lotAllocNote"></div>
+        <div class="list-wrap" style="margin-top:6px">
+          <table class="list" id="lotTable" data-sort>
+            <thead><tr>
+              <th class="col-art"><span class="sr-only">Image</span></th><th>Item</th><th class="hide-lg">Printing</th><th>Finish</th><th class="num">Qty</th>
+              <th class="num hide-lg">Market ea.</th><th class="num">Cost ea.</th><th class="num hide-lg">Line cost</th>
+              <th>Location</th><th><span class="sr-only">Actions</span></th>
+            </tr></thead>
+            <tbody id="lotBody"></tbody>
+          </table>
+        </div>
+        <div class="modal-actions" style="margin-top:12px">
+          <button id="lotDiscard" class="danger">Discard draft</button>
+          <span class="spacer"></span>
+          <span class="muted" id="lotHint"></span>
+          <button id="lotPost" class="gold">Post receipt into inventory</button>
+        </div>
+        </div>
+
+      <!-- Receipts open for Warehouse Mode (#388): the "On the floor" tab -->
+      <div id="floorSection" hidden data-full-only>
+        <div class="sec-head">
+          <h2>Received on the floor</h2>
+          <span class="muted" id="floorHdr"></span>
+        </div>
+        <p class="hint">Open a receipt here and Warehouse Mode books the cards in; close it here when they're all in, and the money spreads across them.</p>
+        <div class="grid3">
+          <label>Bought from <input id="floorSource" autocomplete="off" maxlength="200" placeholder="e.g. Craigslist pickup, LGS bulk"></label>
+          <label>Total spent ($) <input id="floorSpend" type="number" min="0" step="0.01" placeholder="0.00"></label>
+          <label>Spread the money by
+            <select id="floorAlloc">
+              <option value="market">market value (recommended)</option>
+              <option value="even">evenly per card</option>
+            </select>
+          </label>
+          <label>Date <input id="floorDate" type="date"></label>
+          <label>Note <input id="floorNote" autocomplete="off" maxlength="1000" placeholder="anything worth remembering"></label>
+        </div>
+        <div class="modal-actions" style="margin-top:8px">
+          <span class="spacer"></span>
+          <button id="floorOpen">Open for Warehouse Mode</button>
+        </div>
+        <div class="list-wrap" style="margin-top:10px">
+          <table class="list" id="floorTable">
+            <thead><tr><th>Receipt</th><th class="hide-sm">Bought from</th><th class="num">Booked</th><th class="num">To put away</th>
+              <th class="hide-sm">Booked by</th><th class="num">Spent</th><th><span class="sr-only">Actions</span></th></tr></thead>
+            <tbody id="floorBody"></tbody>
+          </table>
+        </div>
+      </div>
+      </section>
+
+      <!-- Transfer preview -->
+      <section id="xferSection" hidden>
+        <div class="sec-head"><h2>Transfer contents</h2><span class="muted" id="xferFrom"></span></div>
+        <div class="form-row">
+          <label style="flex:1;min-width:180px">Put everything in
+            <select id="xferDest"></select>
+          </label>
+          <label class="row"><input type="checkbox" id="xferPutaway" checked> Use the putaway rules per card instead</label>
+          <label class="row"><input type="checkbox" id="xferCost" checked> Carry the sender's cost basis</label>
+        </div>
+        <div class="list-wrap" style="margin-top:10px">
+          <table class="list" id="xferTable" data-sort>
+            <thead><tr><th><span class="sr-only">Image</span></th><th>Card</th><th>Printing</th><th>Finish</th><th class="num">Qty</th>
+              <th class="num">Cost ea.</th><th>Goes to</th></tr></thead>
+            <tbody id="xferBody"></tbody>
+          </table>
+        </div>
+        <div class="modal-actions" style="margin-top:12px">
+          <span class="spacer"></span>
+          <button id="xferPost" class="gold">Receive into inventory</button>
+        </div>
+      </section>
+
+      <!-- Ledger of cards added straight from the collection (option 1) -->
+      <section id="ledgerSection" hidden>
+        <div class="sec-head">
+          <h2><span id="ledTitle">Added from collection</span> <span class="muted" id="ledHdr"></span></h2>
+          <div class="toolbar">
+            <input id="ledSearch" placeholder="Filter…" style="min-width:170px">
+            <button id="ledCsv" class="small">Export CSV</button>
+          </div>
+        </div>
+        <div class="hint" style="margin-top:0"><span id="ledIntro">Every card you have added this way, newest first.</span> Click a column to re-sort.
+          <a href="/help.html#receive-collection">More in Help</a></div>
+        <div class="list-wrap" style="margin-top:10px">
+          <table class="list" id="ledTable" data-sort>
+            <thead><tr><th><span class="sr-only">Image</span></th><th>Added</th><th><span id="ledItemTh">Card</span></th><th>Printing</th><th>Finish</th>
+              <th class="num">Qty</th><th>Into</th><th>Note</th></tr></thead>
+            <tbody id="ledBody"></tbody>
+          </table>
+        </div>
+      </section>
+
+      <!-- Receipt history (business mode only, #325) -->
+      <section data-full-only>
+        <div class="sec-head">
+          <h2>Receipt history</h2>
+          <span class="muted" id="recHdr"></span>
+        </div>
+        <div class="list-wrap">
+          <table class="list" id="recTable" data-sort>
+            <thead><tr><th><span class="sr-only">Image</span></th><th>Receipt</th><th>When</th><th class="hide-lg">Kind</th><th class="hide-md">Source</th>
+              <th class="num">Cards</th><th class="num">Spent</th><th class="num hide-lg">Cost / card</th><th><span class="sr-only">Actions</span></th></tr></thead>
+            <tbody id="recBody"></tbody>
+          </table>
+        </div>
+      </section>
+    </div>
+
+    <!-- ===================== RIGHT: preview ===================== -->
+    <div class="col-right">
+      <aside class="card-panel sticky" id="preview" aria-label="Card preview"></aside>
+      <aside class="card-panel sticky" id="sealedPreview" aria-label="Product preview" hidden></aside>
+    </div>
+  </div>
+</main>
+
+<script src="/js/shipCost.js"></script>
+<script src="/js/priceRuleEngine.js"></script>
+<script src="/js/core.js"></script>
+<script src="/js/glossary.js"></script>
+<script src="/js/ui.js"></script>
+<script src="/receive.page.js"></script>
+</body>
+</html>

@@ -1,0 +1,191 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<title>Order Fulfillment · Grimoire</title>
+<link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'><rect width='32' height='32' rx='2' fill='%23151617'/><rect x='8' y='5' width='17' height='22' rx='1.5' fill='%231d1e21' stroke='%23f26b1d' stroke-width='2'/><path d='M11.6 5.8v20.4' stroke='%23f26b1d' stroke-width='1.6' opacity='.75'/><path d='M18.6 11.4l3.4 4.6-3.4 4.6-3.4-4.6z' fill='%23f26b1d'/></svg>">
+<link rel="manifest" href="/manifest.webmanifest">
+<link rel="apple-touch-icon" href="/icons/icon-192.png">
+<meta name="theme-color" content="#151617">
+<link rel="stylesheet" href="/css/app.css">
+</head>
+<body>
+
+<main>
+  <h1>Order Fulfillment <a class="help-link" href="/help.html#orders" title="Help for this page" aria-label="Help for this page"><svg class=ic aria-hidden=true><use href=/icons/sprite.svg#circle-help></use></svg></a></h1>
+  <p class="page-intro">Take orders from picked to shipped, or handed over at the counter.</p>
+
+  <div class="tabs">
+    <button id="tabOrders" class="seg active"><svg class=ic aria-hidden=true><use href=/icons/sprite.svg#shopping-cart></use></svg> Orders</button>
+    <button id="tabPick" class="seg"><svg class=ic aria-hidden=true><use href=/icons/sprite.svg#package></use></svg> Pick list <span class="count" id="pickCount">0</span></button>
+  </div>
+
+  <!-- ===================== Manapool orders ===================== -->
+  <div id="paneOrders">
+    <section>
+      <div class="sec-head">
+        <h2>Orders needing fulfillment</h2>
+        <div class="toolbar">
+          <button id="mpFetch" class="primary"><svg class=ic aria-hidden=true><use href=/icons/sprite.svg#refresh-cw></use></svg> Fetch orders</button>
+          <button id="mpCached">Show cached</button>
+          <button id="mpBulkPick">Generate pick lists</button>
+          <label class="row">Status
+            <select id="mpStatusFilter">
+              <option value="">All statuses</option>
+              <option value="open">Open (unfulfilled, processing, error)</option>
+              <option value="shipped">Finished (shipped, delivered, refunded)</option>
+            </select>
+          </label>
+          <span class="muted" id="mpStatus"></span>
+        </div>
+      </div>
+      <div id="mpNote" class="hint" style="margin-top:0"></div>
+      <div class="hint" style="margin-top:0">Tick orders below, then <b>Generate pick lists</b> to create a separate
+        pick list per order in one go — they are not pooled together.</div>
+      <div class="form-row" style="margin-top:10px;align-items:center;gap:10px">
+        <input id="mpSearch" placeholder="Search order no., customer, card, pick ticket…" autocomplete="off"
+          aria-label="Search orders" style="flex:1;min-width:0;max-width:420px">
+        <span class="muted" id="mpSel"></span>
+      </div>
+      <div class="list-wrap" style="margin-top:10px">
+        <table class="list" id="mpTable" data-sort><thead><tr>
+          <th style="width:34px"><input type="checkbox" id="mpAll" title="Select all"></th>
+          <th>Order</th><th>Placed</th><th>Status</th><th class="num hide-sm">Lines</th><th class="num">Cards</th>
+          <th class="num hide-sm">Total</th><th class="hide-sm">Ship to</th><th>Grimoire</th><th></th>
+        </tr></thead><tbody id="mpBody"></tbody></table>
+      </div>
+    </section>
+  </div>
+
+  <!-- ===================== Pick list ===================== -->
+  <div id="panePick" hidden>
+    <section>
+      <div class="sec-head">
+        <h2>Pick list <span class="muted" id="pickHdr"></span></h2>
+        <div class="toolbar">
+          <button id="pickBackToOrders" class="ghost"><svg class=ic aria-hidden=true><use href=/icons/sprite.svg#arrow-left></use></svg> Back to orders</button>
+          <button id="pickImport">Import TCGplayer order…</button>
+          <button id="pickPrint"><svg class=ic aria-hidden=true><use href=/icons/sprite.svg#printer></use></svg> Print</button>
+          <button id="pickClear" class="danger">Clear</button>
+        </div>
+      </div>
+      <div class="hint" style="margin-top:0">Every ticket still being picked or awaiting ship shows below. Click a row to open it, or tick several to move them
+        through a step together. <a href="/help.html#orders">More in Help</a></div>
+      <div class="toolbar" style="margin-top:8px">
+        <button id="pqComplete" class="gold" disabled>Complete all lines on ticket(s)</button>
+        <button id="pqGoWeigh" disabled hidden>Go to weigh &amp; manifest</button>
+        <button id="pqSkipWeigh" disabled>Mark shipped</button>
+        <button id="pqBatch" disabled title="Pull several open tickets from one combined sheet, then sort them back into their orders"><svg class=ic aria-hidden=true><use href=/icons/sprite.svg#clipboard-list></use></svg> Pick together</button>
+        <span class="muted" id="pqStatus"></span>
+      </div>
+      <div class="form-row" style="margin-top:8px;align-items:center;gap:10px">
+        <input id="pqSearch" placeholder="Search pick ticket, order no., customer, card…" autocomplete="off"
+          aria-label="Search pick tickets" style="flex:1;min-width:0;max-width:420px">
+        <span class="faint" id="pqSearchNote" hidden>Includes shipped tickets while searching.</span>
+      </div>
+      <div class="list-wrap" style="margin-top:8px">
+        <table class="list" id="pickQueueTable" data-sort><thead><tr>
+          <th class="col-art"></th><th style="width:34px"><input type="checkbox" id="pqAll" title="Select all"></th>
+          <th>Order</th><th class="hide-sm">Steps</th><th class="num">Cards</th><th>Stage</th><th></th>
+        </tr></thead><tbody id="pickQueueBody"></tbody></table>
+      </div>
+      <div id="pickProgress" class="hint"></div>
+      <!-- One ticket at a time. Hidden while a batch (#212) is open below. -->
+      <div id="pickDetail">
+        <div id="pickStepper" style="margin-top:14px"></div>
+        <div id="pickCounterNote"></div>
+        <div class="hint" style="margin-top:8px">"Pull from" shows which location each copy comes out of.
+          <a href="/help.html#orders">More in Help</a></div>
+        <div class="list-wrap" style="margin-top:10px">
+          <table class="list" id="pickTable" data-sort><thead><tr>
+            <th class="col-art"></th><th title="Tick each line as you pick it"><input type="checkbox" id="pickAll" aria-label="Tick all picked" title="Tick all picked"> <span>Picked</span></th><th>Card</th><th class="hide-sm">Set</th><th class="hide-sm">#</th><th class="hide-sm">Foil</th><th class="hide-sm">Condition</th><th class="num">Need</th>
+            <th>Pull from</th><th class="num hide-sm">Value</th><th>Status</th><th></th>
+          </tr></thead><tbody id="pickBody"></tbody></table>
+        </div>
+        <div id="pickShortSummary" class="hint"></div>
+        <div id="pickActionArea"></div>
+      </div>
+      <!-- Pick together (#212): several tickets pulled from one combined
+           sheet, then sorted back into their orders one order at a time.
+           Each order stays its own ticket. lists.page.js renderBatch(). -->
+      <div id="batchDetail" hidden>
+        <div class="callout" style="margin-top:14px"><span class="cico"><svg class=ic aria-hidden=true><use href=/icons/sprite.svg#clipboard-list></use></svg></span><div class="cbody">
+          <h3 id="batchTitle">Picking together</h3>
+          <div class="hint" style="margin-top:0" id="batchOrders"></div>
+          <!-- In a Store only: who the batch is assigned to; an Owner or
+               Manager can hand it to someone else. -->
+          <div class="toolbar" id="batchAssignRow" style="margin-top:8px" hidden>
+            <span id="batchAssignee"></span>
+            <span class="toolbar" id="batchReassignBox" hidden>
+              <select id="batchAssignSel" aria-label="Assign this batch to"></select>
+              <button id="batchReassign" class="small"><svg class=ic aria-hidden=true><use href=/icons/sprite.svg#user></use></svg> Reassign</button>
+            </span>
+          </div>
+        </div></div>
+        <div id="batchLockNote"></div>
+        <div class="toolbar" style="margin-top:10px">
+          <div class="mode-toggle" role="group" aria-label="Batch step">
+            <button id="batchStepPull" class="seg active">1. Pull</button>
+            <button id="batchStepSort" class="seg">2. Sort into orders</button>
+          </div>
+          <span class="spacer"></span>
+          <button id="batchClose" class="ghost"><svg class=ic aria-hidden=true><use href=/icons/sprite.svg#arrow-left></use></svg> Back to one ticket</button>
+          <button id="batchRelease" class="ghost" hidden title="Give this batch back to the open queue" aria-label="Release this batch">Release</button>
+          <button id="batchDissolve" class="danger"><svg class=ic aria-hidden=true><use href=/icons/sprite.svg#x></use></svg> Dissolve batch</button>
+        </div>
+        <div id="batchPullPane">
+          <div class="batch-fsbar">
+            <strong id="batchFsTitle" class="fs-only"></strong>
+            <span class="spacer"></span>
+            <span class="fs-only batch-fs-size" role="group" aria-label="Text size">
+              <button id="batchFsSmaller" class="small" title="Smaller text" aria-label="Smaller text">A&minus;</button>
+              <button id="batchFsLarger" class="small" title="Larger text" aria-label="Larger text">A+</button>
+            </span>
+            <button id="batchFsEnter" class="small fs-not" title="Full screen" aria-label="Full screen"><svg class=ic aria-hidden=true><use href=/icons/sprite.svg#maximize-2></use></svg> Full screen</button>
+            <button id="batchFsExit" class="small fs-only" title="Exit full screen" aria-label="Exit full screen"><svg class=ic aria-hidden=true><use href=/icons/sprite.svg#minimize-2></use></svg> Exit full screen</button>
+          </div>
+          <div class="hint batch-pull-help" style="margin-top:8px">One line per location, sorted so you can walk it once. Print it to carry it with you.</div>
+          <div id="batchFsLock"></div>
+          <div class="list-wrap" style="margin-top:10px">
+            <table class="list" id="batchTable" data-sort><thead><tr>
+              <th></th><th title="Tick when this card is picked for every order"><input type="checkbox" id="batchPullAll" aria-label="Tick all picked" title="Tick all picked"> <span>Picked</span></th><th>Pull from</th><th>Card</th><th class="hide-sm">Set</th><th class="hide-sm">#</th><th class="hide-sm">Foil</th>
+              <th class="hide-sm">Condition</th><th class="num">Qty</th><th>For orders</th><th>Status</th>
+            </tr></thead><tbody id="batchBody"></tbody></table>
+          </div>
+          <div id="batchPullSummary" class="hint"></div>
+          <div id="batchPullActions"></div>
+        </div>
+        <div id="batchSortPane" hidden>
+          <div class="hint" style="margin-top:8px">One order at a time: take each card on the list out of the pile,
+            put it in that order's bag and tick it off. Then move on to the next order.</div>
+          <div id="batchSortOrders" class="mode-toggle" role="group" aria-label="Order to sort" style="margin-top:10px;flex-wrap:wrap"></div>
+          <h3 id="batchSortHead" style="margin:12px 0 0"></h3>
+          <div class="list-wrap" style="margin-top:8px">
+            <table class="list" id="batchSortTable" data-sort><thead><tr>
+              <th><input type="checkbox" id="batchSortAll" aria-label="Tick all bagged" title="Tick all bagged"> <span>Bagged</span></th><th></th><th>Card</th><th class="hide-sm">Set</th><th class="hide-sm">#</th><th>Foil</th>
+              <th class="hide-sm">Condition</th><th class="num">Bag</th><th>Status</th>
+            </tr></thead><tbody id="batchSortBody"></tbody></table>
+          </div>
+          <div id="batchSortDone"></div>
+          <div class="modal-actions" style="margin-top:12px">
+            <button id="batchPrevOrder"><svg class=ic aria-hidden=true><use href=/icons/sprite.svg#arrow-left></use></svg> Previous order</button>
+            <span class="spacer"></span>
+            <button id="batchNextOrder" class="primary">Next order</button>
+          </div>
+        </div>
+      </div>
+    </section>
+  </div>
+</main>
+
+<script src="/js/shipCost.js"></script>
+<script src="/js/priceRuleEngine.js"></script>
+<script src="/js/core.js"></script>
+<script src="/js/glossary.js"></script>
+<script src="/js/ui.js"></script>
+<script src="/lists.page.js"></script>
+</body>
+</html>

@@ -1,0 +1,265 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<title>Putaway · Grimoire</title>
+<link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'><rect width='32' height='32' rx='2' fill='%23151617'/><rect x='8' y='5' width='17' height='22' rx='1.5' fill='%231d1e21' stroke='%23f26b1d' stroke-width='2'/><path d='M11.6 5.8v20.4' stroke='%23f26b1d' stroke-width='1.6' opacity='.75'/><path d='M18.6 11.4l3.4 4.6-3.4 4.6-3.4-4.6z' fill='%23f26b1d'/></svg>">
+<link rel="manifest" href="/manifest.webmanifest">
+<link rel="apple-touch-icon" href="/icons/icon-192.png">
+<meta name="theme-color" content="#151617">
+<link rel="stylesheet" href="/css/app.css">
+</head>
+<body>
+
+<main>
+  <h1>Putaway <a class="help-link" href="/help.html#putaway-page" title="Help for this page" aria-label="Help for this page"><svg class=ic aria-hidden=true><use href=/icons/sprite.svg#circle-help></use></svg></a></h1>
+  <p class="page-intro">Pick a shelf and see where everything in it belongs.</p>
+
+  <div class="tabs">
+    <button id="tabBin" class="seg active" title="Redistribute everything currently sitting in one bin to where it belongs"><svg class=ic aria-hidden=true><use href=/icons/sprite.svg#inbox></use></svg> Empty a bin</button>
+    <button id="tabTo" class="seg" title="See what elsewhere in the collection belongs in one target bin"><svg class=ic aria-hidden=true><use href=/icons/sprite.svg#target></use></svg> Fill a bin</button>
+    <button id="tabConsolidate" class="seg" title="Gather a card that's split across several locations back into one"><svg class=ic aria-hidden=true><use href=/icons/sprite.svg#magnet></use></svg> Consolidate</button>
+    <button id="tabOne" class="seg" title="Look up where a single card should go, without moving anything yet"><svg class=ic aria-hidden=true><use href=/icons/sprite.svg#scan-search></use></svg> Check one card</button>
+    <button id="tabPlan" class="seg" title="See every stack in the collection that should move"><svg class=ic aria-hidden=true><use href=/icons/sprite.svg#clipboard-list></use></svg> Whole collection</button>
+    <button id="tabBreak" class="seg" title="Find cards that no longer match the rules of the bin they're sitting in"><svg class=ic aria-hidden=true><use href=/icons/sprite.svg#ban></use></svg> Rule breakers</button>
+    <button id="tabCap" class="seg" title="See how full every location is"><svg class=ic aria-hidden=true><use href=/icons/sprite.svg#package></use></svg> Capacity</button>
+  </div>
+
+  <!-- ===================== From a bin ===================== -->
+  <div id="paneBin">
+    <section>
+      <div class="sec-head">
+        <h2>Which bin are you emptying?</h2>
+        <div class="toolbar">
+          <select id="binPick" aria-label="Bin to empty"></select>
+          <label class="row" title="Let a card stay where it is if this bin's own rules claim it">
+            <input type="checkbox" id="binAllowSame"> May stay put
+          </label>
+          <button id="binReload" class="ghost small"><svg class=ic aria-hidden=true><use href=/icons/sprite.svg#refresh-cw></use></svg> Recalculate</button>
+        </div>
+      </div>
+      <div class="hint" style="margin-top:0">Pick the bin to empty; any location with cards in it works.
+        <a href="/help.html#putaway-bin">More in Help</a></div>
+      <div id="binChoices" class="receipt-kinds"
+           style="grid-template-columns:repeat(auto-fit,minmax(280px,360px));justify-content:start;margin-bottom:0"></div>
+      <div id="binEmpty"></div>
+    </section>
+
+    <div class="tiles" id="binTiles" hidden></div>
+
+    <section id="binPlanSection" hidden>
+      <div class="sec-head">
+        <h2>The plan <span class="muted" id="binHdr"></span></h2>
+        <div class="toolbar">
+          <input id="binSearch" placeholder="Filter…" style="min-width:170px">
+          <button id="binAll" class="small">Tick all</button>
+          <button id="binNone" class="small ghost">Untick all</button>
+          <button id="binPrint" class="small"><svg class=ic aria-hidden=true><use href=/icons/sprite.svg#printer></use></svg> Print</button>
+          <button id="binGo" class="gold">Move the ticked cards</button>
+        </div>
+      </div>
+      <div class="table-wrap">
+        <table data-sort>
+          <thead><tr>
+            <th><span class="sr-only">Image</span></th><th style="width:34px"><span class="sr-only">Select</span></th>
+            <th>Card</th><th class="hide-sm">Printing</th><th class="num">Qty</th>
+            <th>Goes to</th><th class="hide-sm">Because</th><th>Status</th>
+          </tr></thead>
+          <tbody id="binBody"></tbody>
+        </table>
+      </div>
+      <div class="hint" id="binNote"></div>
+    </section>
+  </div>
+
+  <!-- ===================== To a bin ===================== -->
+  <div id="paneTo" hidden>
+    <section>
+      <div class="sec-head">
+        <h2>What belongs here?</h2>
+        <div class="toolbar">
+          <select id="toPick"></select>
+          <button id="toReload" class="ghost small"><svg class=ic aria-hidden=true><use href=/icons/sprite.svg#refresh-cw></use></svg> Recalculate</button>
+        </div>
+      </div>
+      <div class="hint" style="margin-top:0" id="toRules"></div>
+      <div id="toEmpty"></div>
+    </section>
+
+    <section id="toPlanSection" hidden>
+      <div class="sec-head">
+        <h2>Eligible elsewhere in the collection <span class="muted" id="toHdr"></span></h2>
+        <div class="toolbar">
+          <input id="toSearch" placeholder="Filter…" style="min-width:170px">
+          <button id="toAll" class="small">Tick all</button>
+          <button id="toNone" class="small ghost">Untick all</button>
+          <button id="toGo" class="gold">Move the ticked cards here</button>
+        </div>
+      </div>
+      <div class="table-wrap">
+        <table data-sort>
+          <thead><tr>
+            <th><span class="sr-only">Image</span></th><th style="width:34px"><span class="sr-only">Select</span></th>
+            <th>Card</th><th class="hide-sm">Printing</th><th class="num">Qty</th>
+            <th>Currently in</th><th>Fits?</th><th id="toWhereTh" hidden>Where in it</th>
+          </tr></thead>
+          <tbody id="toBody"></tbody>
+        </table>
+      </div>
+    </section>
+  </div>
+
+  <!-- ===================== Consolidate ===================== -->
+  <div id="paneConsolidate" hidden>
+    <section>
+      <div class="sec-head">
+        <h2>Consolidate <span class="muted" id="conHdr"></span></h2>
+        <div class="toolbar">
+          <label class="row">Split across at least
+            <select id="conMinLocs">
+              <option value="2">2 locations</option>
+              <option value="3">3 locations</option>
+              <option value="4">4 locations</option>
+              <option value="5">5 locations</option>
+            </select>
+          </label>
+          <input id="conSearch" placeholder="Filter…" style="min-width:170px">
+          <button id="conAll" class="small">Tick all</button>
+          <button id="conNone" class="small ghost">Untick all</button>
+          <button id="conGo" class="gold">Gather the ticked cards</button>
+        </div>
+      </div>
+      <div class="hint" style="margin-top:0">A card is "fragmented" when it sits in more than one location. Change <b>Target</b> per row if needed.
+        <a href="/help.html#putaway-consolidate">More in Help</a></div>
+      <div class="table-wrap" style="margin-top:12px">
+        <table data-sort>
+          <thead><tr>
+            <th><span class="sr-only">Image</span></th><th style="width:34px"><span class="sr-only">Select</span></th>
+            <th>Card</th><th class="num">Locations</th><th class="num hide-sm">Stacks</th><th class="num">Total qty</th>
+            <th>Target</th><th>Fits?</th>
+          </tr></thead>
+          <tbody id="conBody"></tbody>
+        </table>
+      </div>
+    </section>
+  </div>
+
+  <!-- ===================== One card ===================== -->
+  <div id="paneOne" hidden>
+    <div class="cols">
+      <div class="col-center">
+        <section>
+          <div class="sec-head"><h2>Which card?</h2></div>
+          <div class="fields" style="grid-template-columns:minmax(0,1.4fr) minmax(0,1.4fr) 130px 100px">
+            <label style="position:relative">Card name
+              <input id="inName" placeholder="Start typing a card name…" autocomplete="off">
+              <div id="acList" class="ac-list" hidden></div>
+            </label>
+            <label>Printing
+              <select id="inPrint"><option value="">— pick a card first —</option></select>
+            </label>
+            <label>Finish <select id="inFoil"><option value="nonfoil">Non-foil</option><option value="foil">Foil</option><option value="etched">Etched foil</option></select></label>
+            <label>Copies <input id="inQty" type="number" min="1" value="1"></label>
+            <label class="span2">Currently in
+              <select id="inFrom"><option value="">— not filed yet / in my hand —</option></select>
+            </label>
+            <label class="row span2" style="align-self:end" title="A card can be filed where it already sits if that place matches">
+              <input type="checkbox" id="allowSame"> Allow the answer to be where it already is
+            </label>
+          </div>
+          <div id="answer" style="margin-top:14px"></div>
+        </section>
+
+        <section id="rankSection" hidden>
+          <div class="sec-head"><h2>Everywhere it could go</h2><span class="muted" id="rankHdr"></span></div>
+          <div class="table-wrap" style="max-height:none;min-height:0">
+            <table data-sort>
+              <thead><tr><th>Location</th><th class="hide-sm">Type</th><th class="num hide-sm">Rules</th><th class="num hide-sm">Priority</th>
+                <th class="num">Held</th><th class="num">Room</th><th>Limit</th><th class="hide-sm">Because</th></tr></thead>
+              <tbody id="rankBody"></tbody>
+            </table>
+          </div>
+        </section>
+      </div>
+      <div class="col-right">
+        <aside class="card-panel sticky" id="preview" aria-label="Card preview"></aside>
+      </div>
+    </div>
+  </div>
+
+  <!-- ===================== Whole collection ===================== -->
+  <div id="panePlan" hidden>
+    <section>
+      <div class="sec-head">
+        <h2>Whole-collection plan <span class="muted" id="planHdr"></span></h2>
+        <div class="toolbar">
+          <select id="planFilter">
+            <option value="move">Stacks that should move</option>
+            <option value="nohome">Stacks no rule claims</option>
+            <option value="all">Every stack</option>
+          </select>
+          <input id="planSearch" placeholder="Filter…" style="min-width:170px">
+          <button id="planApply" class="gold">Move everything ticked</button>
+        </div>
+      </div>
+      <div class="hint" style="margin-top:0">A stack "should move" when another location's rules claim it more specifically. Whole stacks only.
+        <a href="/help.html#putaway-whole">More in Help</a></div>
+      <div class="table-wrap" style="margin-top:12px">
+        <table data-sort>
+          <thead><tr>
+            <th><span class="sr-only">Image</span></th><th style="width:34px"><input type="checkbox" id="planAll" aria-label="Select all" title="Select all"></th>
+            <th>Card</th><th class="hide-sm">Printing</th><th class="num">Qty</th><th>From</th><th>To</th><th class="hide-sm">Because</th><th>Fits?</th>
+          </tr></thead>
+          <tbody id="planBody"></tbody>
+        </table>
+      </div>
+    </section>
+  </div>
+
+  <!-- ===================== Rule breakers ===================== -->
+  <div id="paneBreak" hidden>
+    <section>
+      <div class="sec-head">
+        <h2>Rule breakers <span class="muted" id="breakHdr"></span></h2>
+        <div class="toolbar">
+          <input id="breakSearch" placeholder="Filter…" style="min-width:170px">
+          <button id="breakApply" class="gold">Move the ticked cards</button>
+        </div>
+      </div>
+      <div class="hint" style="margin-top:0">A card "breaks" a location's rules when it sits somewhere with putaway rules on and doesn't satisfy them.
+        <a href="/help.html#putaway-breakers">More in Help</a></div>
+      <div class="table-wrap" style="margin-top:12px">
+        <table data-sort>
+          <thead><tr>
+            <th><span class="sr-only">Image</span></th><th style="width:34px"><span class="sr-only">Select</span></th>
+            <th>Card</th><th class="hide-sm">Printing</th><th class="num">Qty</th><th>In</th>
+            <th class="hide-sm">Breaks</th><th>Could move to</th>
+          </tr></thead>
+          <tbody id="breakBody"></tbody>
+        </table>
+      </div>
+    </section>
+  </div>
+
+  <!-- ===================== Capacity ===================== -->
+  <div id="paneCap" hidden>
+    <section>
+      <div class="sec-head"><h2>Capacity</h2><span class="muted" id="capHdr"></span></div>
+      <div class="hint" style="margin-top:0">Only locations with a card ceiling can be full.
+        <a href="/help.html#putaway-capacity">More in Help</a></div>
+      <div id="capBody" style="margin-top:14px"></div>
+    </section>
+  </div>
+</main>
+
+<script src="/js/shipCost.js"></script>
+<script src="/js/priceRuleEngine.js"></script>
+<script src="/js/core.js"></script>
+<script src="/js/glossary.js"></script>
+<script src="/js/ui.js"></script>
+<script src="/putaway.page.js"></script>
+</body>
+</html>

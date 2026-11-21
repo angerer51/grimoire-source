@@ -1,0 +1,380 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<title>Listings · Grimoire</title>
+<link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'><rect width='32' height='32' rx='2' fill='%23151617'/><rect x='8' y='5' width='17' height='22' rx='1.5' fill='%231d1e21' stroke='%23f26b1d' stroke-width='2'/><path d='M11.6 5.8v20.4' stroke='%23f26b1d' stroke-width='1.6' opacity='.75'/><path d='M18.6 11.4l3.4 4.6-3.4 4.6-3.4-4.6z' fill='%23f26b1d'/></svg>">
+<link rel="manifest" href="/manifest.webmanifest">
+<link rel="apple-touch-icon" href="/icons/icon-192.png">
+<meta name="theme-color" content="#151617">
+<link rel="stylesheet" href="/css/app.css">
+</head>
+<body>
+
+<main>
+  <h1>Listings <a class="help-link" href="/help.html#selling" title="Help for this page" aria-label="Help for this page"><svg class=ic aria-hidden=true><use href=/icons/sprite.svg#circle-help></use></svg></a></h1>
+  <p class="page-intro">This page sets <b>how many copies</b> of each card to list for sale. The <b>Card pricing</b> and <b>Sealed pricing</b> tabs set the <b>price</b>. Start on <b>Evaluate &amp; Apply</b> and press Evaluate. <a href="/help.html#selling">More in Help</a></p>
+
+  <div class="tabs tabs-5">
+    <button id="tabRules" class="seg"><svg class=ic aria-hidden=true><use href=/icons/sprite.svg#settings></use></svg> Rules</button>
+    <button id="tabEvaluate" class="seg active"><svg class=ic aria-hidden=true><use href=/icons/sprite.svg#clipboard-list></use></svg> Evaluate &amp; Apply</button>
+    <button id="tabPricing" class="seg"><svg class=ic aria-hidden=true><use href=/icons/sprite.svg#tag></use></svg> Card pricing</button>
+    <button id="tabSealed" class="seg"><svg class=ic aria-hidden=true><use href=/icons/sprite.svg#package></use></svg> Sealed pricing</button>
+    <button id="tabManapool" class="seg"><svg class=ic aria-hidden=true><use href=/icons/sprite.svg#refresh-cw></use></svg> Manapool</button>
+  </div>
+
+  <div id="paneRules" hidden>
+    <section>
+      <div class="grp">
+      <div class="sec-head"><h3>Condition pricing</h3></div>
+      <p class="hint" style="margin-top:0">What percentage of market price to ask for each grade when exporting or pushing a listing.
+        <a href="/help.html#listings-condition">More in Help</a></p>
+      <div class="fields" style="grid-template-columns:repeat(5,100px) 200px auto;max-width:900px" id="condFields"></div>
+      <div class="row" style="margin-top:10px;align-items:center;gap:14px">
+        <label style="max-width:260px">Default keep, when no rule claims a stack
+          <input id="prefDefaultKeep" type="number" min="0" value="0"></label>
+        <label style="max-width:200px" title="The least a listing must make over what you paid, as a % of cost, before Manapool's fees. Delist unprofitable uses it, and so does the switch beside it when on. At 25%, a $1.00 card must list at $1.25 or more.">Minimum profit (% of cost)
+          <input id="prefMinProfit" type="number" min="0" step="any" inputmode="decimal"></label>
+        <label class="row" title="Evaluate gives any stack whose price is under your minimum profit a target of 0, whatever rule matched. The Card pricing tab also takes those listings down on Manapool: when you push, and on its own on a schedule with Auto-push on, up to 50 a run. Stacks with no cost entered are never touched."><input type="checkbox" id="prefNeverLoss"> Never list below my minimum profit</label>
+        <button id="prefSave">Save</button>
+        <span class="muted" id="prefStatus"></span>
+      </div>
+    </div>
+
+    <div class="grp">
+      <div class="sec-head">
+        <h3>Listing rules <span class="muted" id="rulesHdr"></span></h3>
+        <div class="toolbar"><button id="btnNewRule" class="primary">+ New rule</button></div>
+      </div>
+      <div class="hint" style="margin-top:0">The highest-<b>priority</b> enabled rule that matches a stack sets how many copies to <b>keep</b>;
+        the rest is listed. A stack no rule claims uses the default keep above.
+        <a href="/help.html#rule-priority">More in Help</a></div>
+      <div id="rulesList" class="loc-grid" style="margin-top:12px"></div>
+    </div>
+
+    <div class="grp">
+      <div class="sec-head">
+        <h3>Name overrides <span class="muted" id="excHdr"></span></h3>
+      </div>
+      <div class="hint" style="margin-top:0">Always keep N of one exact card name, checked <b>before</b> the rules above.
+        <a href="/help.html#listings-overrides">More in Help</a></div>
+      <div class="row" style="margin-top:10px;align-items:end;gap:10px">
+        <label style="position:relative;min-width:260px">Card name
+          <input id="excName" placeholder="Start typing a card name…" autocomplete="off">
+          <div id="excAcList" class="ac-list" hidden></div>
+        </label>
+        <label style="width:110px">Keep <input id="excKeep" type="number" min="0" value="4"></label>
+        <button id="excAdd">+ Add exception</button>
+      </div>
+      <div class="table-wrap" style="margin-top:12px">
+        <table data-sort>
+          <thead><tr><th>Card name</th><th class="num">Keep</th><th></th></tr></thead>
+          <tbody id="excList"></tbody>
+        </table>
+      </div>
+    </div>
+    </section>
+  </div>
+
+  <div id="paneEvaluate">
+    <section>
+      <div class="sec-head">
+        <h2>Evaluate <span class="muted" id="planHdr"></span></h2>
+        <div class="toolbar">
+          <select id="planRule" title="Evaluate with one specific rule, or let every enabled rule compete by priority"></select>
+          <input id="planSearch" placeholder="Filter…" style="min-width:170px">
+          <label class="row" title="Also show listings whose target already matches what's listed">
+            <input type="checkbox" id="planShowAll"> Show unchanged too
+          </label>
+          <label class="row" id="planFastWrap" data-full-only title="Only listings whose printing is SELLING FAST on Manapool: sold well above its usual pace in the last 7 days">
+            <input type="checkbox" id="planFast"> Selling fast only
+          </label>
+          <button id="btnEvaluate">Evaluate</button>
+          <button id="planApply" class="primary" title="Marks these quantities to list in Grimoire only. Nothing is sent to a marketplace; use Push to Manapool for that">Apply ticked</button>
+          <button id="btnPushMp" class="gold" title="Create/update real listings on Manapool for the ticked rows"><svg class=ic aria-hidden=true><use href=/icons/sprite.svg#upload></use></svg> Push ticked to Manapool</button>
+          <button id="btnExport" class="ghost"><svg class=ic aria-hidden=true><use href=/icons/sprite.svg#download></use></svg> Export TCGplayer CSV</button>
+        </div>
+      </div>
+      <div class="hint" style="margin-top:0">Runs your rules against your inventory. Nothing changes until you tick rows and apply or push. <b>Apply ticked</b> only marks how many copies to list inside Grimoire; nothing reaches a marketplace until you push. Rows with no price start unticked. "Going up" means the rules want more copies listed than now, "going down" fewer.
+        <a href="/help.html#listings-rules">More in Help</a></div>
+      <div class="hint mp-why-off" hidden></div>
+      <div class="table-wrap" style="margin-top:12px">
+        <table data-sort class="head-wrap">
+          <thead><tr>
+            <th></th><th style="width:34px"><input type="checkbox" id="planAll" title="Select all"></th>
+            <th>Card</th><th>Set</th><th title="Collector number">#</th><th class="hide-sm" title="Condition">Cond</th>
+            <th class="hide-sm">Finish</th><th class="hide-sm" title="Language">Lang</th>
+            <th class="num" title="The price a push sends for this listing: its Bulk Price ask if it has one, otherwise the market price scaled by the condition pricing on the Rules tab. &quot;none&quot; means Manapool will refuse to create it as a new listing.">Price</th>
+            <th class="num hide-sm" title="Copies of this printing sold on Manapool in the last 7 days (every finish, condition and language together)">Sold 7d</th>
+            <th class="num hide-sm" title="About how many days the copies listed on Manapool now would last at the last 7 days' pace: listed copies ÷ copies sold a day. A market-wide estimate for every seller together, not a forecast for your own price. Blank with too few sales to say.">Days left</th>
+            <th class="num" title="Copies of this listing across all its locations">Have</th><th class="num" title="Copies held back from selling; the rest can be listed">Keep</th>
+            <th class="hide-sm" title="The listing rule that set Keep (&quot;default&quot; means no rule matched, so the default keep from the Rules tab was used)">Rule</th><th class="num" title="The quantity currently marked to list in Grimoire (not necessarily on a marketplace yet)">Listed now</th><th class="num" title="The quantity the rules say should be listed">Target</th><th class="num" title="Target minus Listed now: positive means list more, negative means list fewer">Δ</th>
+          </tr></thead>
+          <tbody id="planBody"><tr><td colspan="17" class="empty">Press Evaluate to build a plan.</td></tr></tbody>
+        </table>
+      </div>
+      <div id="planMore" class="row" style="margin-top:8px;align-items:center;gap:10px" hidden>
+        <span class="muted more-text"></span>
+        <button id="planMoreBtn" class="small ghost">Show 500 more</button>
+      </div>
+    </section>
+  </div>
+
+  <div id="panePricing" hidden>
+    <section>
+      <div class="grp">
+      <div class="sec-head">
+        <h3>Price rules <span class="muted" id="bp_rulesHdr"></span></h3>
+        <div class="toolbar"><button id="bp_btnNewRule" class="primary">+ New rule</button></div>
+      </div>
+      <div class="hint" style="margin-top:0">The highest-<b>priority</b> enabled rule that matches a stack sets its ask price.
+        <a href="/help.html#rule-priority">More in Help</a></div>
+      <div id="bp_rulesList" class="loc-grid" style="margin-top:12px"></div>
+    </div>
+
+    <div class="grp">
+      <div class="sec-head">
+        <h3>Evaluate <span class="muted" id="bp_planHdr"></span></h3>
+        <div class="toolbar">
+          <select id="bp_planRule" title="Show every listing the rules price, or only the ones one rule prices"></select>
+          <input id="bp_planSearch" placeholder="Filter…" style="min-width:170px">
+          <label class="row" title="Also show stacks Manapool already has at their ask, and stacks an exclude rule claims">
+            <input type="checkbox" id="bp_planShowAll"> Show unchanged too
+          </label>
+          <button id="bp_btnEvaluate">Evaluate</button>
+          <button id="bp_btnPushMp" class="gold" title="Update the price of real Manapool listings for the ticked rows (quantity is left exactly as-is)"><svg class=ic aria-hidden=true><use href=/icons/sprite.svg#upload></use></svg> Push ticked to Manapool</button>
+        </div>
+      </div>
+      <div class="hint mp-why-off" hidden></div>
+      <div id="planHint"></div>
+      <div class="table-wrap" style="margin-top:12px">
+        <table data-sort>
+          <thead><tr>
+            <th></th><th style="width:34px"><input type="checkbox" id="bp_planAll" title="Select all"></th>
+            <th>Card</th><th class="hide-sm">Printing</th><th class="hide-sm">Condition</th><th class="num hide-sm">Have</th><th class="num">Listed</th>
+            <th class="num hide-sm">Market</th><th class="num" title="The price last sent to Manapool for this listing">On Manapool</th><th class="hide-sm">Rule</th><th class="num" title="The listing's ask right now, from its rule and today's prices">Ask</th><th class="num">Δ</th>
+          </tr></thead>
+          <tbody id="bp_planBody"><tr><td colspan="12" class="empty">Press Evaluate to build a plan.</td></tr></tbody>
+        </table>
+      </div>
+      <div id="bp_planMore" class="row" style="margin-top:8px;align-items:center;gap:10px" hidden>
+        <span class="muted more-text"></span>
+        <button id="bp_planMoreBtn" class="small ghost">Show 500 more</button>
+      </div>
+    </div>
+
+    <div class="grp">
+      <div class="sec-head"><h3>Schedule</h3></div>
+      <div class="hint" style="margin-top:0">Runs on the server, whether or not the app is open. The rule you pick must be switched on in the table above.
+        <a href="/help.html#bulk-price-schedule">More in Help</a></div>
+      <div class="fields" style="grid-template-columns:170px 1fr 170px 170px 1fr;max-width:1100px;margin-top:10px">
+        <label class="row" style="align-self:end">
+          <input type="checkbox" id="schEnabled"> Run on a schedule
+        </label>
+        <label>Rule to run <select id="schRule"></select></label>
+        <label>Frequency <select id="schFreq"><option value="daily">Every day</option><option value="weekly">Every week</option></select></label>
+        <label>At <select id="schHour"></select></label>
+        <label id="schWeekdayWrap">On <select id="schWeekday"></select></label>
+      </div>
+      <div class="hint" id="schTzNote" style="margin-top:6px"></div>
+      <div class="callout warn" style="margin-top:12px" id="schPushWarn">
+        <span class="cico"><svg class=ic aria-hidden=true><use href=/icons/sprite.svg#triangle-alert></use></svg></span><div class="cbody">
+          <h3>Auto-push to Manapool</h3>
+          <label class="row"><input type="checkbox" id="schAutoPush">
+            Also push the new prices straight to Manapool when the schedule runs</label>
+          <div class="hint" style="margin-top:6px">With this on, a scheduled run updates the <b>price</b> of your real, already-listed Manapool listings with nobody reviewing it first.
+            <span id="bpAutoPushLoss" hidden><b>Never list below my minimum profit</b> is on, so it also <b>takes down</b> listings whose new price is under your minimum profit, up to 50 a run. Any others wait, unchanged, for the next run. Those taken down stay down until you list them again from Listings.</span>
+            Off, a run sends nothing and only reports how many have a new price.</div>
+        </div>
+      </div>
+      <div class="row" style="margin-top:12px;align-items:center;gap:14px">
+        <button id="schSave" class="primary">Save schedule</button>
+        <button id="schRunNow" class="ghost">Run it now</button>
+        <span class="muted" id="schStatus"></span>
+      </div>
+      <div class="hint" id="schLastRun" style="margin-top:10px"></div>
+    </div>
+    </section>
+
+  </div>
+
+  <div id="paneSealed" hidden>
+    <section>
+      <div class="grp">
+      <div class="sec-head">
+        <h3>Sealed price rules <span class="muted" id="spRulesHdr"></span></h3>
+        <div class="toolbar"><button id="spBtnNewRule" class="primary">+ New rule</button></div>
+      </div>
+      <div class="hint" style="margin-top:0">Match sealed product by an optional set code and/or name.
+        <a href="/help.html#bulk-price-sealed">More in Help</a></div>
+      <div id="spRulesList" class="loc-grid" style="margin-top:12px"></div>
+    </div>
+
+    <div class="grp">
+      <div class="sec-head">
+        <h3>Evaluate sealed <span class="muted" id="spPlanHdr"></span></h3>
+        <div class="toolbar">
+          <select id="spPlanRule" title="Evaluate with one specific rule, or let every enabled rule compete by priority"></select>
+          <input id="spPlanSearch" placeholder="Filter…" style="min-width:170px">
+          <label class="row" title="Also show items whose ask price already matches, and items an exclude rule claims">
+            <input type="checkbox" id="spPlanShowAll"> Show unchanged too
+          </label>
+          <button id="spBtnEvaluate">Evaluate</button>
+          <button id="spPlanApply" class="primary" title="Updates the ask price in Grimoire only - nothing external changes">Apply ticked</button>
+          <button id="spBtnPushMp" class="gold" title="Create/update real listings on Manapool for the ticked rows"><svg class=ic aria-hidden=true><use href=/icons/sprite.svg#upload></use></svg> Push ticked to Manapool</button>
+        </div>
+      </div>
+      <div class="table-wrap" style="margin-top:12px">
+        <table data-sort>
+          <thead><tr>
+            <th style="width:34px"><input type="checkbox" id="spPlanAll" title="Select all"></th>
+            <th>Product</th><th class="hide-sm">Set</th><th class="num hide-sm">Have</th><th class="num">Listed</th>
+            <th class="num hide-sm">Market</th><th class="num">Current ask</th><th class="hide-sm">Rule</th><th class="num">Target ask</th><th class="num">Δ</th>
+          </tr></thead>
+          <tbody id="spPlanBody"><tr><td colspan="10" class="empty">Press Evaluate to build a plan.</td></tr></tbody>
+        </table>
+      </div>
+    </div>
+    </section>
+  </div>
+
+  <div id="paneManapool" hidden>
+    <section>
+      <div class="sec-head">
+        <h2>Your Manapool listings</h2>
+        <div class="toolbar">
+          <button id="lpFetch" class="primary"><svg class=ic aria-hidden=true><use href=/icons/sprite.svg#refresh-cw></use></svg> Fetch listings</button>
+          <span class="muted" id="lpStatus"></span>
+          <span class="muted mp-why-off" hidden></span>
+        </div>
+      </div>
+      <div class="hint" style="margin-top:0">What Manapool has for sale right now, checked against your own listed quantity.
+        <a href="/help.html#listings-manapool">More in Help</a></div>
+      <div class="table-wrap" style="margin-top:12px">
+        <table data-sort>
+          <thead><tr>
+            <th></th><th>Card</th><th class="hide-sm">Printing</th><th class="hide-sm">Condition</th><th class="num">Manapool qty</th>
+            <th class="num hide-sm">Manapool price</th><th class="num">Local listed</th><th>Status</th>
+          </tr></thead>
+          <tbody id="lpBody"></tbody>
+        </table>
+      </div>
+    </section>
+
+    <section class="flat">
+      <div class="callout bad">
+        <span class="cico"><svg class=ic aria-hidden=true><use href=/icons/sprite.svg#triangle-alert></use></svg></span><div class="cbody">
+          <h3>Danger zone</h3>
+          <b>Delist everything from Manapool.</b> Reads your live Manapool listings first, then sets every one of them to 0 on your real Manapool
+          account: cards and sealed, including listings made on Manapool directly or that Grimoire doesn't
+          know about, regardless of what's ticked in Evaluate. This is account-wide and immediate — there is
+          no undo for the live listings themselves (Grimoire's own local records can still be re-pushed afterward).
+          <div style="margin-top:10px">
+            <button id="btnDelistUnprofitable" class="danger" title="Set every live Manapool card listing priced under your minimum profit (Rules tab) to 0. Listings with no cost entered stay up."><svg class=ic aria-hidden=true><use href=/icons/sprite.svg#trash-2></use></svg> Delist unprofitable <span id="unprofitableCount"></span></button>
+            <button id="btnDelistAll" class="danger" title="Set every live Manapool listing (cards and sealed) to 0 on your real Manapool account, regardless of what's ticked above"><svg class=ic aria-hidden=true><use href=/icons/sprite.svg#trash-2></use></svg> Delist all from Manapool</button>
+          </div>
+        </div>
+      </div>
+    </section>
+  </div>
+</main>
+
+<!-- ===================== Add / edit rule ===================== -->
+<div class="modal-backdrop" id="ruleModal" hidden>
+  <div class="modal xwide" role="dialog" aria-modal="true" aria-label="Edit listing rule">
+    <h3 id="rmTitle">New listing rule</h3>
+    <div class="fields" style="grid-template-columns:1.6fr 130px 130px 130px">
+      <label class="span2">Name <input id="rmName" placeholder="e.g. Bulk commons"></label>
+      <label title="Higher wins when more than one rule matches a stack">Priority <input id="rmPriority" type="number" value="0"></label>
+      <label title="Copies to keep out of what you have; the rest becomes the listed quantity">Keep <input id="rmKeep" type="number" min="0" value="0"></label>
+    </div>
+    <div class="rule-help">Pick ALL (AND) or ANY (OR) of the conditions below, with an optional NOT to invert the
+      whole box, same as a putaway location's rules — "+ Add group" nests a second box for things like
+      (Set is neo OR Set is mh3) AND Rarity is common. No conditions at all means this rule matches every stack.</div>
+    <div id="rmCriteria"></div>
+    <div class="form-row" style="margin-top:8px">
+      <span class="spacer"></span>
+      <span class="muted" id="rmCriterionCount"></span>
+    </div>
+    <div class="form-row" style="margin-top:16px">
+      <button id="rmDelete" class="ghost" hidden>Delete rule</button>
+      <span class="spacer"></span>
+      <button id="rmCancel" class="ghost">Cancel</button>
+      <button id="rmSave" class="primary">Save rule</button>
+    </div>
+  </div>
+</div>
+
+<!-- ===================== Add / edit rule ===================== -->
+<div class="modal-backdrop" id="bp_ruleModal" hidden>
+  <div class="modal xwide" role="dialog" aria-modal="true" aria-label="Edit price rule">
+    <h3 id="bp_rmTitle">New price rule</h3>
+    <div class="fields" style="grid-template-columns:1.3fr 110px 110px 1.2fr">
+      <label class="span2">Name <input id="bp_rmName" placeholder="e.g. Bulk commons"></label>
+      <label title="Higher wins when more than one rule matches a stack">Priority <input id="bp_rmPriority" type="number" value="0"></label>
+      <label>Action <select id="rmMode">
+        <option value="percent">% of base price</option>
+        <option value="delta">Base price, plus/minus $</option>
+        <option value="fixed">Fixed price</option>
+        <option value="exclude">Exclude — market price × condition %</option>
+      </select></label>
+    </div>
+    <div id="rmValueArea" style="margin-top:4px"></div>
+    <div class="rule-help">Pick ALL (AND) or ANY (OR) of the conditions below, with an optional NOT to invert the
+      whole box, same as a putaway location's rules — "+ Add group" nests a second box for things like
+      (Set is neo OR Set is mh3) AND Rarity is common. No conditions at all means this rule matches every stack.</div>
+    <div id="bp_rmCriteria"></div>
+    <div class="form-row" style="margin-top:8px">
+      <span class="spacer"></span>
+      <span class="muted" id="bp_rmCriterionCount"></span>
+    </div>
+    <div class="form-row" style="margin-top:16px">
+      <button id="bp_rmDelete" class="ghost" hidden>Delete rule</button>
+      <span class="spacer"></span>
+      <button id="bp_rmCancel" class="ghost">Cancel</button>
+      <button id="bp_rmSave" class="primary">Save rule</button>
+    </div>
+  </div>
+</div>
+
+<!-- ===================== Add / edit sealed rule ===================== -->
+<div class="modal-backdrop" id="spRuleModal" hidden>
+  <div class="modal" role="dialog" aria-modal="true" aria-label="Edit sealed price rule">
+    <h3 id="spRmTitle">New sealed price rule</h3>
+    <div class="fields" style="grid-template-columns:1.3fr 110px 110px 1.2fr">
+      <label class="span2">Name <input id="spRmName" placeholder="e.g. Booster boxes"></label>
+      <label title="Higher wins when more than one rule matches">Priority <input id="spRmPriority" type="number" value="0"></label>
+      <label>Action <select id="spRmMode">
+        <option value="percent">% of market price</option>
+        <option value="delta">Market price, plus/minus $</option>
+        <option value="fixed">Fixed price</option>
+        <option value="exclude">Exclude — never reprice</option>
+      </select></label>
+    </div>
+    <div id="spRmValueArea" style="margin-top:4px"></div>
+    <div class="fields" style="grid-template-columns:1fr 1fr;margin-top:10px">
+      <label>Set code (optional) <input id="spRmSetCode" placeholder="e.g. 2x2"></label>
+      <label>Name contains (optional) <input id="spRmNameContains" placeholder="e.g. booster box"></label>
+    </div>
+    <div class="hint" style="margin-top:6px">No filters at all matches every listed sealed item.</div>
+    <div class="form-row" style="margin-top:16px">
+      <button id="spRmDelete" class="ghost" hidden>Delete rule</button>
+      <span class="spacer"></span>
+      <button id="spRmCancel" class="ghost">Cancel</button>
+      <button id="spRmSave" class="primary">Save rule</button>
+    </div>
+  </div>
+</div>
+
+<script src="/js/shipCost.js"></script>
+<script src="/js/priceRuleEngine.js"></script>
+<script src="/js/core.js"></script>
+<script src="/js/glossary.js"></script>
+<script src="/js/ui.js"></script>
+<script src="/bulk-price.page.js"></script>
+<script src="/listings.page.js"></script>
+</body>
+</html>

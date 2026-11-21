@@ -1,0 +1,95 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<title>Audit Log · Grimoire</title>
+<link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'><rect width='32' height='32' rx='2' fill='%23151617'/><rect x='8' y='5' width='17' height='22' rx='1.5' fill='%231d1e21' stroke='%23f26b1d' stroke-width='2'/><path d='M11.6 5.8v20.4' stroke='%23f26b1d' stroke-width='1.6' opacity='.75'/><path d='M18.6 11.4l3.4 4.6-3.4 4.6-3.4-4.6z' fill='%23f26b1d'/></svg>">
+<link rel="manifest" href="/manifest.webmanifest">
+<link rel="apple-touch-icon" href="/icons/icon-192.png">
+<meta name="theme-color" content="#151617">
+<link rel="stylesheet" href="/css/app.css">
+</head>
+<body>
+
+<main>
+  <h1>Audit Log <a class="help-link" href="/help.html#housekeeping" title="Help for this page" aria-label="Help for this page"><svg class=ic aria-hidden=true><use href=/icons/sprite.svg#circle-help></use></svg></a> <span class="muted" id="logHdr"></span></h1>
+  <p class="page-intro">Every change to this collection, and who made it.</p>
+
+  <div class="tabs">
+    <button id="tabAudit" class="seg active"><svg class=ic aria-hidden=true><use href=/icons/sprite.svg#pencil-line></use></svg> Activity</button>
+    <button id="tabEvents" class="seg"><svg class=ic aria-hidden=true><use href=/icons/sprite.svg#package></use></svg> Ship &amp; build events</button>
+  </div>
+
+  <div id="paneAudit">
+    <section>
+      <div class="list-toolbar">
+        <input id="auditSearch" aria-label="Filter the activity log" placeholder="Filter by card, set, location or note…" style="flex:1;min-width:200px">
+        <select id="auditAction" aria-label="Action"></select>
+        <label class="row" title="Cost/From/To/Receipt are blank for most rows (add/remove/edit) - hide them to see the columns that matter for those rows without scrolling">
+          <input type="checkbox" id="auditCompact"> Hide sparse columns
+        </label>
+        <span class="spacer"></span>
+        <button id="auditExport">Export CSV</button>
+      </div>
+      <div class="list-wrap">
+        <table class="list" id="auditTable" data-sort><thead><tr>
+          <th></th><th>When</th><th class="hide-sm">By</th><th>Action</th><th>Card</th><th class="hide-sm">Set</th><th class="hide-sm">#</th><th class="num">Δ Qty</th>
+          <th class="num hide-sm">Old</th><th class="num hide-sm">New</th><th class="num col-optional hide-sm">Cost</th>
+          <th class="col-optional hide-sm">From</th><th class="col-optional hide-sm">To</th><th class="col-optional hide-sm">Receipt</th><th>Note</th><th data-nosort></th>
+        </tr></thead><tbody id="auditBody"></tbody></table>
+      </div>
+      <div class="log-meta" id="auditMeta"></div>
+      <div class="form-row" style="margin-top:10px">
+        <button id="auditPrev" class="small">‹ Prev</button>
+        <span class="muted" id="auditPageInfo"></span>
+        <button id="auditNext" class="small">Next ›</button>
+      </div>
+    </section>
+    <!-- Kept off the toolbar, isolated the same way Settings isolates "Erase
+         this collection" - a stray click among the filter/export controls
+         above should never land here. -->
+    <section class="flat" id="auditDanger" style="margin-top:8px">
+      <div class="callout bad">
+        <span class="cico"><svg class=ic aria-hidden=true><use href=/icons/sprite.svg#triangle-alert></use></svg></span><div class="cbody">
+          <h3>Danger zone</h3>
+          Permanently deletes every entry in this Activity log. A single entry can usually be undone instead — see
+          that row's own Undo action.
+          <div style="margin-top:10px"><button id="auditClear" class="danger">Clear log</button></div>
+        </div>
+      </div>
+    </section>
+  </div>
+
+  <div id="paneEvents" hidden>
+    <section>
+      <div class="list-toolbar">
+        <span class="muted">Shipped pick lists and decks you have built, newest first.</span>
+        <span class="spacer"></span>
+        <button id="histExport">Export CSV</button>
+      </div>
+      <div class="list-wrap" id="histWrap"></div>
+      <div class="log-meta" id="histMeta"></div>
+    </section>
+    <section class="flat" style="margin-top:8px">
+      <div class="callout bad">
+        <span class="cico"><svg class=ic aria-hidden=true><use href=/icons/sprite.svg#triangle-alert></use></svg></span><div class="cbody">
+          <h3>Danger zone</h3>
+          Permanently deletes every shipped pick list / built deck event below.
+          <div style="margin-top:10px"><button id="histClear" class="danger">Clear events</button></div>
+        </div>
+      </div>
+    </section>
+  </div>
+</main>
+
+<script src="/js/shipCost.js"></script>
+<script src="/js/priceRuleEngine.js"></script>
+<script src="/js/core.js"></script>
+<script src="/js/glossary.js"></script>
+<script src="/js/ui.js"></script>
+<script src="/audit-log.page.js"></script>
+</body>
+</html>

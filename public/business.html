@@ -1,0 +1,58 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<title>Grimoire for your shop · Grimoire</title>
+<meta name="description" content="Run a Magic: The Gathering shop? Tell us about it and we'll be in touch about setting Grimoire up for your store.">
+<link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'><rect width='32' height='32' rx='2' fill='%23151617'/><rect x='8' y='5' width='17' height='22' rx='1.5' fill='%231d1e21' stroke='%23f26b1d' stroke-width='2'/><path d='M11.6 5.8v20.4' stroke='%23f26b1d' stroke-width='1.6' opacity='.75'/><path d='M18.6 11.4l3.4 4.6-3.4 4.6-3.4-4.6z' fill='%23f26b1d'/></svg>">
+<link rel="manifest" href="/manifest.webmanifest">
+<link rel="apple-touch-icon" href="/icons/icon-192.png">
+<meta name="theme-color" content="#151617">
+<link rel="stylesheet" href="/css/app.css">
+</head>
+<body class="auth">
+
+<!-- #249: the landing page's business contact form. Public (PUBLIC_PAGES in
+     server/index.js). Submissions wait in Admin -> Invites, tagged business;
+     nobody is emailed. -->
+<div class="auth-card">
+  <div class="brand">
+    <svg class="logo" viewBox="0 0 32 32" role="img" aria-label="Grimoire" style="width:34px;height:34px">
+      <rect x="9" y="5" width="18" height="22" rx="1" fill="#d9d7cf"/>
+      <rect x="5.5" y="4" width="19" height="24" rx="1.5" fill="#1d1e21" stroke="#f26b1d" stroke-width="1.5"/>
+      <path d="M10.2 4.9v22.2" stroke="#f26b1d" stroke-width="1.2" opacity=".75"/>
+      <path d="M17.4 11.2 20.8 16l-3.4 4.8L14 16z" fill="#f26b1d"/>
+      <path d="M17.4 22.7v1.6" stroke="#f26b1d" stroke-width="1.2" opacity=".8"/>
+    </svg>
+    Grimoire
+  </div>
+  <h1 class="biz-title">Using Grimoire for your shop?</h1>
+  <div class="tag" id="tag">Personal collections are free. Running a store on Grimoire needs a few extra permissions,
+    so tell us about your shop and we'll be in touch to set it up.</div>
+
+  <form id="form" autocomplete="on" novalidate>
+    <label>Your name <input id="name" autocomplete="name" maxlength="80"></label>
+    <label>Email — we'll reply here <input id="email" type="email" autocomplete="email" spellcheck="false" maxlength="254"></label>
+    <label>Shop name <input id="shopName" autocomplete="organization" maxlength="100"></label>
+    <label>Rough size (optional) <input id="shopSize" maxlength="100" placeholder="For example: about 20,000 cards, 3 staff"></label>
+    <label>What would you like to do with Grimoire?
+      <textarea id="plans" rows="4" maxlength="1000" placeholder="For example: track stock across two stores, price singles, buy from customers"></textarea></label>
+    <!-- Honeypot, as on the invite request form (#238): off-screen and
+         skipped by keyboard and screen readers; only a form-filling bot
+         puts anything in it. -->
+    <div class="hp" aria-hidden="true"><label>Website <input id="website" tabindex="-1" autocomplete="off"></label></div>
+    <div class="modal-actions">
+      <button type="submit" id="submit" class="primary" style="flex:1;justify-content:center">Send</button>
+    </div>
+  </form>
+
+  <div id="msg" class="status" role="status" aria-live="polite" tabindex="-1"></div>
+  <div class="switch home-link"><a href="/welcome.html">Back to Grimoire</a></div>
+</div>
+
+<script src="/business.page.js"></script>
+</body>
+</html>

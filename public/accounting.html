@@ -1,0 +1,85 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<title>Accounting · Grimoire</title>
+<link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'><rect width='32' height='32' rx='2' fill='%23151617'/><rect x='8' y='5' width='17' height='22' rx='1.5' fill='%231d1e21' stroke='%23f26b1d' stroke-width='2'/><path d='M11.6 5.8v20.4' stroke='%23f26b1d' stroke-width='1.6' opacity='.75'/><path d='M18.6 11.4l3.4 4.6-3.4 4.6-3.4-4.6z' fill='%23f26b1d'/></svg>">
+<link rel="manifest" href="/manifest.webmanifest">
+<link rel="apple-touch-icon" href="/icons/icon-192.png">
+<meta name="theme-color" content="#151617">
+<link rel="stylesheet" href="/css/app.css">
+</head>
+<body>
+
+<main>
+  <h1>Accounting <a class="help-link" data-full-only href="/help.html#accounting" title="Help for this page" aria-label="Help for this page"><svg class=ic aria-hidden=true><use href=/icons/sprite.svg#circle-help></use></svg></a></h1>
+  <p class="page-intro" id="acctIntro">What you sold, what it cost and what you spent, over the dates you pick.</p>
+
+  <section>
+    <div class="sec-head"><h2>Export</h2></div>
+    <div class="hint" style="margin-top:0">Downloads the tab you're on for the dates below. Revenue shows for Manapool orders and counter sales.
+      <a href="/help.html#accounting-numbers">More in Help</a></div>
+    <div class="form-row" style="margin-top:10px">
+      <label>From <input id="acctFrom" type="date"></label>
+      <label>To <input id="acctTo" type="date"></label>
+      <div id="acctPresets" style="display:flex;gap:6px;align-self:end">
+        <button type="button" class="small" data-preset="7">Last 7 days</button>
+        <button type="button" class="small" data-preset="30">Last 30 days</button>
+        <button type="button" class="small" data-preset="month">This month</button>
+        <button type="button" class="small" data-preset="lastMonth">Last month</button>
+        <button type="button" class="small" data-preset="quarter">This quarter</button>
+        <button type="button" class="small" data-preset="ytd">YTD</button>
+      </div>
+      <span class="spacer"></span>
+      <button id="acctCsv">Export CSV</button>
+    </div>
+    <div class="tiles" id="acctTiles" style="margin-top:10px"></div>
+    <div class="tabs" style="margin-top:14px">
+      <button id="tabTxns" class="seg active"><svg class=ic aria-hidden=true><use href=/icons/sprite.svg#list></use></svg> Transactions</button>
+      <button id="tabPnl" class="seg"><svg class=ic aria-hidden=true><use href=/icons/sprite.svg#file-text></use></svg> P&amp;L statement</button>
+    </div>
+
+    <div id="paneTxns">
+    <div id="acctChart"></div>
+    <div class="legend"><span><i class="pos"></i>Revenue</span><span><i class="neg"></i>COGS</span></div>
+    <div class="list-wrap" style="margin-top:10px">
+      <table class="list" id="acctTable" data-sort>
+        <thead><tr><th>Date</th><th>Type</th><th>Reference</th><th>Order</th>
+          <th class="num">Revenue</th><th class="num">COGS</th><th class="num">Gross profit</th>
+          <th class="num">Fees</th><th class="num hide-sm" title="Packing and postage, from Settings → Shipping">Shipping cost</th><th class="num">Earnings</th>
+          <th class="num">Spend</th><th class="num">Refund</th></tr></thead>
+        <tbody id="acctBody"></tbody></table>
+    </div>
+    </div>
+
+    <div id="panePnl" hidden>
+    <div class="hint" style="margin-top:0">One row per calendar month in the date range. <b>Net profit</b> is gross profit minus fees, shipping costs and refunds, plus returned stock.
+      <a href="/help.html#accounting-pnl">More in Help</a></div>
+    <div class="callout warn" id="pnlFeesNote" hidden style="margin-top:10px">
+      <span class="cico"><svg class=ic aria-hidden=true><use href=/icons/sprite.svg#triangle-alert></use></svg></span>
+      <div class="cbody" id="pnlFeesNoteBody"></div>
+    </div>
+    <div class="list-wrap" style="margin-top:10px">
+      <table class="list" id="pnlTable" data-sort>
+        <thead><tr><th>Month</th><th class="num hide-sm">Sales</th>
+          <th class="num">Revenue</th><th class="num">COGS</th><th class="num">Gross profit</th>
+          <th class="num hide-sm">Fees</th><th class="num hide-sm" title="Packing and postage, from Settings → Shipping">Shipping</th><th class="num hide-sm">Refunds</th>
+          <th class="num hide-sm" title="Cost of returned cards put back into stock">Returned stock</th><th class="num">Net profit</th></tr></thead>
+        <tbody id="pnlBody"></tbody>
+        <tfoot id="pnlFoot"></tfoot></table>
+    </div>
+    </div>
+  </section>
+</main>
+
+<script src="/js/shipCost.js"></script>
+<script src="/js/priceRuleEngine.js"></script>
+<script src="/js/core.js"></script>
+<script src="/js/glossary.js"></script>
+<script src="/js/ui.js"></script>
+<script src="/accounting.page.js"></script>
+</body>
+</html>

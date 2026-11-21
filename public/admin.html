@@ -1,0 +1,391 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<title>Admin · Grimoire</title>
+<link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'><rect width='32' height='32' rx='2' fill='%23151617'/><rect x='8' y='5' width='17' height='22' rx='1.5' fill='%231d1e21' stroke='%23f26b1d' stroke-width='2'/><path d='M11.6 5.8v20.4' stroke='%23f26b1d' stroke-width='1.6' opacity='.75'/><path d='M18.6 11.4l3.4 4.6-3.4 4.6-3.4-4.6z' fill='%23f26b1d'/></svg>">
+<link rel="manifest" href="/manifest.webmanifest">
+<link rel="apple-touch-icon" href="/icons/icon-192.png">
+<meta name="theme-color" content="#151617">
+<link rel="stylesheet" href="/css/app.css">
+</head>
+<body>
+
+<main>
+  <h1>Admin dashboard <a class="help-link" href="/help.html#admin" title="Help for this page" aria-label="Help for this page"><svg class=ic aria-hidden=true><use href=/icons/sprite.svg#circle-help></use></svg></a></h1>
+  <p class="page-intro" id="roleNote"></p>
+
+  <div class="tabs">
+    <button id="tabSystem" class="seg" hidden><svg class=ic aria-hidden=true><use href=/icons/sprite.svg#monitor></use></svg> System</button>
+    <button id="tabAccounts" class="seg"><svg class=ic aria-hidden=true><use href=/icons/sprite.svg#user></use></svg> Accounts</button>
+    <button id="tabTickets" class="seg"><svg class=ic aria-hidden=true><use href=/icons/sprite.svg#ticket></use></svg> Support tickets</button>
+    <button id="tabInvites" class="seg" hidden><svg class=ic aria-hidden=true><use href=/icons/sprite.svg#mail></use></svg> Invites <span class="badge cap" id="requestsBadge" title="Requests waiting (invites and business enquiries)" hidden></span></button>
+    <button id="tabEmail" class="seg" hidden><svg class=ic aria-hidden=true><use href=/icons/sprite.svg#mail></use></svg> Email</button>
+    <button id="tabGithub" class="seg" hidden><svg class=ic aria-hidden=true><use href=/icons/sprite.svg#github></use></svg> GitHub</button>
+    <button id="tabManapool" class="seg" hidden><svg class=ic aria-hidden=true><use href=/icons/sprite.svg#link></use></svg> Mana Pool</button>
+  </div>
+
+  <div id="paneSystemA" hidden>
+  <section class="flat" id="tilesSection" hidden>
+    <div class="sec-head"><h2>System</h2><button id="admReload" class="small"><svg class=ic aria-hidden=true><use href=/icons/sprite.svg#refresh-cw></use></svg> Reload</button></div>
+    <div class="tiles" id="admTiles"></div>
+  </section>
+  </div>
+
+  <div id="paneAccounts" hidden>
+  <section>
+    <div class="sec-head">
+      <h2>Accounts <span class="muted" id="usersHdr"></span></h2>
+      <div class="toolbar">
+        <input id="userSearch" aria-label="Search accounts" autocomplete="off" placeholder="Search username or name…" style="min-width:200px">
+        <select id="userRoleFilter" aria-label="Role">
+          <option value="">All roles</option>
+          <option value="user">User</option>
+          <option value="moderator">Moderator</option>
+          <option value="admin">Admin</option>
+        </select>
+        <select id="userStatusFilter" aria-label="Status">
+          <option value="">Active + disabled</option>
+          <option value="active">Active only</option>
+          <option value="disabled">Disabled only</option>
+        </select>
+      </div>
+    </div>
+    <div class="list-wrap">
+      <table class="list" data-sort>
+        <thead><tr>
+          <th>Username</th><th class="hide-sm">Display name</th><th id="thRole">Role</th><th>Status</th>
+          <th>Online</th><th class="hide-sm">Last active</th><th class="hide-sm">Created</th><th data-nosort></th>
+        </tr></thead>
+        <tbody id="userBody"></tbody>
+      </table>
+    </div>
+    <div class="form-row" style="margin-top:10px">
+      <button id="userPrev" class="small">‹ Prev</button>
+      <span class="muted" id="userPageInfo"></span>
+      <button id="userNext" class="small">Next ›</button>
+    </div>
+  </section>
+  </div>
+
+  <div id="paneTickets" hidden>
+  <section>
+    <div class="sec-head">
+      <h2>Support tickets <span class="muted" id="ticketsHdr"></span></h2>
+      <div class="toolbar">
+        <input id="ticketSearch" aria-label="Search tickets" autocomplete="off" placeholder="Search subject or username…" style="min-width:200px">
+        <select id="ticketStatusFilter" aria-label="Status">
+          <option value="">All statuses</option>
+          <option value="open">Open</option>
+          <option value="in-progress">In progress</option>
+          <option value="resolved">Resolved</option>
+          <option value="closed">Closed</option>
+        </select>
+        <select id="ticketCategoryFilter" aria-label="Category">
+          <option value="">All categories</option>
+          <option value="bug">Bug report</option>
+          <option value="support">Support request</option>
+          <option value="feature">Feature request</option>
+        </select>
+      </div>
+    </div>
+    <div class="list-wrap">
+      <table class="list" data-sort>
+        <thead><tr><th>Subject</th><th>From</th><th>Category</th><th>Status</th><th class="hide-sm">Issue</th><th>Updated</th></tr></thead>
+        <tbody id="ticketBody"></tbody>
+      </table>
+    </div>
+    <div class="form-row" style="margin-top:10px">
+      <button id="ticketPrev" class="small">‹ Prev</button>
+      <span class="muted" id="ticketPageInfo"></span>
+      <button id="ticketNext" class="small">Next ›</button>
+    </div>
+  </section>
+
+  </div>
+
+  <div id="paneInvites" hidden>
+  <section>
+  <div class="grp" id="requestsSection" hidden>
+    <div class="sec-head">
+      <h3>Invite requests <span class="muted" id="requestsHdr"></span></h3>
+      <div class="toolbar">
+        <label>Show <select id="requestShow">
+          <option value="open" selected>Waiting</option>
+          <option value="all">All</option>
+        </select></label>
+      </div>
+    </div>
+    <div class="hint" style="margin-top:0">People who asked for an invite from the sign-up page. Nobody is emailed when a request comes in, so check here.
+      <a href="/help.html#admin-invites">More in Help</a></div>
+    <div id="requestEmailNote" class="callout warn" hidden>
+      <span class="cico"><svg class=ic aria-hidden=true><use href=/icons/sprite.svg#triangle-alert></use></svg></span>
+      <div class="cbody"><h3>Email isn't set up</h3>
+        <b>Send invite</b> still makes the invite, but can't email it. You'll get the sign-up link to copy and send
+        yourself. Set up email on the <b>Email</b> tab to have it sent for you.</div>
+    </div>
+    <div id="requestResult" hidden></div>
+    <div id="requestStatus" class="status"></div>
+    <div class="list-wrap" style="margin-top:10px">
+      <table class="list" data-sort><thead><tr><th>Name</th><th>Email</th><th class="hide-sm">Details</th><th class="hide-sm">Asked</th><th>Status</th><th data-nosort></th></tr></thead>
+        <tbody id="requestBody"></tbody></table>
+    </div>
+  </div>
+
+  <div class="grp" id="invitesSection" hidden>
+    <div class="sec-head">
+      <h3>Invites <span class="muted" id="invitesHdr"></span></h3>
+      <div class="toolbar">
+        <label>Show <select id="inviteShow">
+          <option value="open" selected>Open</option>
+          <option value="all">All</option>
+        </select></label>
+      </div>
+    </div>
+    <div class="form-row">
+      <label style="min-width:200px">Invite note <input id="invNote" placeholder="who is this for?" maxlength="120"></label>
+      <button id="admInvite" class="primary">Mint an invite code</button>
+    </div>
+    <div class="hint">An unused code stops working after 30 days (7 for organization invites).
+      <a href="/help.html#admin-invites">More in Help</a></div>
+    <div id="admStatus" class="status"></div>
+    <div class="list-wrap" style="margin-top:10px">
+      <table class="list" data-sort><thead><tr><th>Code</th><th>Created</th><th>Made by</th><th>Note</th><th>Status</th><th data-nosort></th></tr></thead>
+        <tbody id="inviteBody"></tbody></table>
+    </div>
+  </div>
+
+  <div class="grp" id="memberInvitesSection" hidden>
+    <div class="sec-head">
+      <h3>Member invites <span class="muted" id="memberInvitesHdr"></span></h3>
+    </div>
+    <div class="hint" style="margin-top:0">Members make their own sign-up links under Social. Whoever joins with one becomes the inviter's friend.
+      <a href="/help.html#admin-invites">More in Help</a></div>
+    <div class="form-row">
+      <label class="row"><input type="checkbox" id="miEnabled"> Let members invite friends</label>
+      <label style="min-width:130px">Invites per member <input id="miAllowance" type="number" min="0" max="100" step="1"></label>
+      <button id="miSave" class="primary">Save</button>
+    </div>
+    <div class="form-row">
+      <label style="min-width:170px">Change one person's invites <input id="miUser" type="text" placeholder="their username" autocomplete="off" autocapitalize="off" spellcheck="false"></label>
+      <label style="min-width:130px">Invites <input id="miUserAllowance" type="number" min="0" max="100" step="1" placeholder="the usual"></label>
+      <button id="miUserSave">Set</button>
+    </div>
+    <div id="miStatus" class="status"></div>
+    <div class="list-wrap" style="margin-top:10px">
+      <table class="list" data-sort><thead><tr><th>Member</th><th>Invited</th><th>Open links</th><th>Left</th><th>Allowance</th></tr></thead>
+        <tbody id="miBody"></tbody></table>
+    </div>
+  </div>
+  </section>
+  </div>
+
+  <div id="paneEmail" hidden>
+  <section id="emailSection" hidden>
+    <div class="sec-head"><h2>Outgoing email</h2></div>
+    <div class="hint" style="margin-top:0">Every email Grimoire sends goes out through this, and nothing is sent until a provider and sending
+      address are set. <a href="/help.html#admin-email">More in Help</a></div>
+    <div class="callout warn" style="margin-top:8px">
+      <span class="cico"><svg class=ic aria-hidden=true><use href=/icons/sprite.svg#triangle-alert></use></svg></span>
+      <div class="cbody"><h3>Resend without a verified domain</h3>The <code>onboarding@resend.dev</code> address only
+        delivers to your own Resend account's email. Mail to anyone else silently fails, so verify your own domain
+        before relying on this for other accounts.</div>
+    </div>
+    <div class="form-row" style="margin-top:8px">
+      <label style="min-width:160px">Provider
+        <select id="emailProvider"><option value="resend">Resend</option></select>
+      </label>
+      <label style="flex:1;min-width:220px">From address <input id="emailFrom" placeholder="noreply@yourdomain.com"></label>
+      <label style="flex:1;min-width:220px">API key <input id="emailKey" type="password" autocomplete="off" placeholder="leave blank to keep the saved key"></label>
+    </div>
+    <div class="form-row" style="margin-top:8px">
+      <button id="emailSave" class="primary">Save</button>
+      <button id="emailTest" class="small">Send a test email to me</button>
+      <span class="spacer"></span>
+      <span class="muted" id="emailState"></span>
+    </div>
+    <div id="emailStatus" class="status"></div>
+  </section>
+  </div>
+
+  <div id="paneGithub" hidden>
+  <section id="githubSection" hidden>
+    <div class="sec-head"><h2>GitHub issues</h2></div>
+    <div class="hint" style="margin-top:0">Bug reports and feature requests become GitHub issues automatically; other tickets
+      can be sent by hand. <a href="/help.html#admin-github">More in Help</a></div>
+    <div class="callout warn" style="margin-top:8px">
+      <span class="cico"><svg class=ic aria-hidden=true><use href=/icons/sprite.svg#triangle-alert></use></svg></span>
+      <div class="cbody"><h3>Closing an issue emails the reporter</h3>Closed as <b>completed</b> tells them "this has been
+        fixed, and the fix is live" — only close it that way once the change is actually deployed. Closed as
+        <b>not planned</b> sends a polite "we've decided not to do this for now". Use a fine-grained token limited to
+        this one repository with <b>Issues: read and write</b> and nothing more.</div>
+    </div>
+    <div class="form-row" style="margin-top:8px">
+      <label style="flex:1;min-width:220px">Repository <input id="githubRepo" placeholder="angerer51/grimoire" autocomplete="off"></label>
+      <label style="flex:1;min-width:220px">Token <input id="githubToken" type="password" autocomplete="off" placeholder="leave blank to keep the saved token"></label>
+    </div>
+    <div class="form-row" style="margin-top:8px">
+      <button id="githubSave" class="primary">Save</button>
+      <button id="githubTest" class="small">Test connection</button>
+      <span class="spacer"></span>
+      <span class="muted" id="githubState"></span>
+    </div>
+    <div id="githubStatus" class="status"></div>
+    <div class="muted" id="githubSyncInfo" style="font-size:12px;margin-top:6px"></div>
+  </section>
+  </div>
+
+  <div id="paneManapool" hidden>
+  <section id="mpAppSection" hidden>
+    <div class="sec-head"><h2>Mana Pool app</h2></div>
+    <div class="hint" style="margin-top:0">Grimoire's own registration with Mana Pool. Sellers can't press <b>Connect Mana Pool</b>
+      until this is saved. <a href="/help.html#admin-manapool">More in Help</a></div>
+    <div class="callout warn" style="margin-top:8px">
+      <span class="cico"><svg class=ic aria-hidden=true><use href=/icons/sprite.svg#triangle-alert></use></svg></span>
+      <div class="cbody"><h3>Saving starts the 7-day switch-over</h3>The first save starts the week in which sellers still
+        on an old pasted access token see a reminder to reconnect. After it, their old tokens are deleted. Mana Pool shows
+        the client secret only once: paste it here straight away.</div>
+    </div>
+    <div class="form-row" style="margin-top:8px">
+      <label style="flex:1;min-width:220px">Client ID <input id="mpAppId" autocomplete="off"></label>
+      <label style="flex:1;min-width:220px">Client secret <input id="mpAppSecret" type="password" autocomplete="off" placeholder="leave blank to keep the saved secret"></label>
+    </div>
+    <div class="form-row" style="margin-top:8px">
+      <button id="mpAppSave" class="primary">Save</button>
+      <span class="spacer"></span>
+      <span class="muted" id="mpAppState"></span>
+    </div>
+    <div id="mpAppStatus" class="status"></div>
+    <dl class="muted" id="mpAppFacts" style="font-size:12px;margin-top:8px;line-height:1.8"></dl>
+  </section>
+  </div>
+
+  <div id="paneSystemB" hidden>
+  <section id="systemSection" hidden>
+    <div class="grp">
+    <div class="sec-head"><h3>Background jobs</h3></div>
+    <div class="form-row">
+      <button id="admCards"><svg class=ic aria-hidden=true><use href=/icons/sprite.svg#refresh-cw></use></svg> Rebuild the card database now</button>
+      <button id="admTags"><svg class=ic aria-hidden=true><use href=/icons/sprite.svg#tag></use></svg> Rebuild the oracle/art tag index now</button>
+      <button id="admSnap"><svg class=ic aria-hidden=true><use href=/icons/sprite.svg#trending-up></use></svg> Take a price snapshot now</button>
+    </div>
+    <div class="hint" style="margin-top:6px">All three run in the background — the app keeps working while they do.</div>
+    <div id="sysStatus" class="status"></div>
+    </div>
+
+    <div class="grp">
+      <div class="sec-head"><h3>Card price source</h3></div>
+      <div class="hint" style="margin-top:0">Where card prices come from. Switching takes effect immediately.
+        <a href="/help.html#admin-prices">More in Help</a></div>
+      <div class="form-row" style="margin-top:8px">
+        <label style="min-width:140px">Source
+          <select id="priceSourceSelect">
+            <option value="scryfall">Scryfall (default)</option>
+            <option value="manapool">Manapool</option>
+          </select>
+        </label>
+        <button id="priceSourceSave" class="small">Save</button>
+        <button id="priceSourceApply" class="small ghost">Refresh now</button>
+      </div>
+      <div class="callout warn" id="priceSourceManapoolNote" hidden style="margin-top:8px">
+        <span class="cico"><svg class=ic aria-hidden=true><use href=/icons/sprite.svg#triangle-alert></use></svg></span><div class="cbody">Manapool only prices printings currently in stock on Manapool
+          itself — a printing nothing is listed for there shows <b>no price at all</b> rather than falling back to
+          Scryfall's number. Coverage runs close to Scryfall's own (~100k of ~110k <code>default_cards</code>
+          printings, last checked), but it moves with Manapool's own inventory and is never identical.</div>
+      </div>
+      <div id="priceSourceStatus" class="status" style="margin-top:6px"></div>
+    </div>
+
+    <div class="grp">
+      <div class="sec-head"><h3>Sealed product catalog (Manapool)</h3></div>
+      <div class="hint" style="margin-top:0">The sealed products Manapool tracks, used by Receive (Sealed), Cycle Count and sealed prices.</div>
+      <div class="form-row" style="margin-top:8px">
+        <button id="sealedRefresh" class="small ghost">Refresh now</button>
+      </div>
+      <div id="sealedStatus" class="status" style="margin-top:6px"></div>
+    </div>
+
+    <div class="grp">
+      <div class="sec-head"><h3>Price history archive (MTGJSON)</h3></div>
+      <div class="hint" style="margin-top:0">History for Movers, the per-card price chart and Portfolio. <a href="/help.html#admin-prices">More in Help</a></div>
+      <div class="form-row" style="margin-top:8px">
+        <button id="mtgjsonIdsRefresh" class="small ghost"><svg class=ic aria-hidden=true><use href=/icons/sprite.svg#refresh-cw></use></svg> Refresh identifier map</button>
+      </div>
+      <div id="mtgjsonStatus" class="status" style="margin-top:6px"></div>
+    </div>
+  </section>
+
+  <section class="flat" id="systemDanger" hidden>
+    <!-- This one specifically deletes the entire existing archive, not just
+         a routine refresh - real data has been lost to this exact action
+         before (BACKLOG.md #26's incident log), so it gets the same
+         "Danger zone" treatment as Settings' "Erase this collection" and
+         Restart below, not just a warning note next to a plain button. -->
+    <div class="callout bad" style="margin-top:0">
+      <span class="cico"><svg class=ic aria-hidden=true><use href=/icons/sprite.svg#triangle-alert></use></svg></span><div class="cbody">
+        <h3>Replace price history archive</h3>
+        Every day/series file on disk is deleted first, then rebuilt from MTGJSON's rolling 90-day history.
+        Anything the nightly snapshot recorded before this point is gone once it runs; going forward, the nightly
+        snapshot keeps appending from MTGJSON's daily file the same as always.
+        <div style="margin-top:10px"><button id="mtgjsonBackfill" class="danger"><svg class=ic aria-hidden=true><use href=/icons/sprite.svg#trending-up></use></svg> Backfill 90-day history now</button></div>
+      </div>
+    </div>
+
+    <!-- Unlike Rebuild/Snapshot above, this disrupts every connected user
+         the moment it fires - the "Danger zone" treatment (same as Settings'
+         "Erase this collection") signals that before the confirm dialog does. -->
+    <div class="callout bad" style="margin-top:12px">
+      <span class="cico"><svg class=ic aria-hidden=true><use href=/icons/sprite.svg#triangle-alert></use></svg></span><div class="cbody">
+        <h3>Restart the server</h3>
+        Everyone connected sees a countdown banner first, and their work is autosaved before the restart happens.
+        The server process restarts itself — no need to touch the machine.
+        <div class="form-row" style="margin-top:10px">
+          <label style="min-width:140px">Warn for (seconds) <input id="restartDelay" type="number" min="5" max="600" value="30"></label>
+          <label style="flex:1">Reason shown in the banner <input id="restartReason" placeholder="applying an update" maxlength="1000"></label>
+          <button id="restartGo" class="danger">Restart the server</button>
+          <button id="restartCancel" class="small" hidden>Cancel pending restart</button>
+        </div>
+        <div id="restartStatus" class="status"></div>
+      </div>
+    </div>
+  </section>
+  </div>
+</main>
+
+<!-- ===================== Ticket: slide-over (UI.slideOver) ===================== -->
+<div class="modal-backdrop slideover" id="ticketPanel" hidden>
+  <div class="slideover-panel" role="dialog" aria-modal="true" aria-labelledby="ticketThreadTitle">
+    <div class="slideover-head">
+      <span class="eyebrow">Support ticket</span>
+      <button type="button" class="small ghost" data-close title="Close" aria-label="Close"><svg class=ic aria-hidden=true><use href=/icons/sprite.svg#x></use></svg></button>
+    </div>
+    <div class="slideover-body">
+      <div class="sec-head">
+        <h2 id="ticketThreadTitle" tabindex="-1"></h2>
+      </div>
+      <div class="form-row" style="margin-bottom:12px">
+        <span id="ticketGithub"></span>
+        <span class="spacer"></span>
+        <label>Status <select id="ticketStatusSelect">
+          <option value="open">Open</option>
+          <option value="in-progress">In progress</option>
+          <option value="resolved">Resolved</option>
+          <option value="closed">Closed</option>
+        </select></label>
+      </div>
+      <div id="ticketThreadHost"></div>
+    </div>
+  </div>
+</div>
+
+<script src="/js/shipCost.js"></script>
+<script src="/js/priceRuleEngine.js"></script>
+<script src="/js/core.js"></script>
+<script src="/js/glossary.js"></script>
+<script src="/js/ui.js"></script>
+<script src="/admin.page.js"></script>
+</body>
+</html>

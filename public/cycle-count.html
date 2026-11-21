@@ -1,0 +1,207 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<title>Cycle Count · Grimoire</title>
+<link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'><rect width='32' height='32' rx='2' fill='%23151617'/><rect x='8' y='5' width='17' height='22' rx='1.5' fill='%231d1e21' stroke='%23f26b1d' stroke-width='2'/><path d='M11.6 5.8v20.4' stroke='%23f26b1d' stroke-width='1.6' opacity='.75'/><path d='M18.6 11.4l3.4 4.6-3.4 4.6-3.4-4.6z' fill='%23f26b1d'/></svg>">
+<link rel="manifest" href="/manifest.webmanifest">
+<link rel="apple-touch-icon" href="/icons/icon-192.png">
+<meta name="theme-color" content="#151617">
+<link rel="stylesheet" href="/css/app.css">
+</head>
+<body>
+
+<main>
+  <h1>Cycle Count <a class="help-link" href="/help.html#housekeeping" title="Help for this page" aria-label="Help for this page"><svg class=ic aria-hidden=true><use href=/icons/sprite.svg#circle-help></use></svg></a></h1>
+  <p class="page-intro">Spot-check a bin against what Grimoire thinks is in it: count what is really there and fix any differences. <a href="/help.html#housekeeping">More in Help</a></p>
+
+  <div id="countList" hidden></div>
+
+  <div class="tabs">
+    <button id="tabFB" class="seg active"><svg class=ic aria-hidden=true><use href=/icons/sprite.svg#download></use></svg> Floor → Book</button>
+    <button id="tabBF" class="seg"><svg class=ic aria-hidden=true><use href=/icons/sprite.svg#upload></use></svg> Book → Floor</button>
+    <button id="tabFull" class="seg"><svg class=ic aria-hidden=true><use href=/icons/sprite.svg#repeat></use></svg> Full Count</button>
+    <button id="tabSealed" class="seg"><svg class=ic aria-hidden=true><use href=/icons/sprite.svg#package></use></svg> Sealed</button>
+  </div>
+
+  <!-- ===================== Floor -> Book ===================== -->
+  <div id="paneFB">
+    <section>
+      <div class="sec-head">
+        <h2>Which bin did you pull from?</h2>
+        <div class="toolbar"><button id="fbPick" class="gold"><svg class=ic aria-hidden=true><use href=/icons/sprite.svg#dices></use></svg> Pick a bin for me</button></div>
+      </div>
+      <div class="fields" style="grid-template-columns:minmax(0,1.6fr) 140px">
+        <label>Bin <select id="fbBin"></select></label>
+        <label>Sample size <input id="fbSize" type="number" min="1"></label>
+      </div>
+    </section>
+
+    <section>
+      <div class="sec-head"><h2>What did you find?</h2></div>
+      <div class="fields" style="grid-template-columns:minmax(0,1.4fr) minmax(0,1.4fr) 130px 90px">
+        <label style="position:relative">Card name
+          <input id="fbSearch" placeholder="Start typing a card name…" autocomplete="off">
+          <div id="fbAcList" class="ac-list" hidden></div>
+        </label>
+        <label>Printing <select id="fbPrint"><option value="">— pick a card first —</option></select></label>
+        <label>Finish <select id="fbFoil"><option value="nonfoil">Non-foil</option><option value="foil">Foil</option><option value="etched">Etched foil</option></select></label>
+        <label class="row" style="align-self:end"><button id="fbAdd" class="small">+ Add</button></label>
+      </div>
+      <div class="table-wrap">
+        <table>
+          <thead><tr><th></th><th>Card</th><th>Printing</th><th>Foil</th><th style="width:34px"></th></tr></thead>
+          <tbody id="fbEntries"><tr><td colspan="5" class="empty">Nothing added yet.</td></tr></tbody>
+        </table>
+      </div>
+      <div class="toolbar"><button id="fbCheck" class="gold">Check results</button> <span class="muted" id="fbProgress" aria-live="polite"></span></div>
+    </section>
+
+    <section id="fbResultSection" hidden>
+      <div class="sec-head"><h2>Results <span class="muted" id="fbResultHdr"></span></h2></div>
+      <div class="table-wrap">
+        <table>
+          <thead><tr><th></th><th>Card</th><th>Printing</th><th>Foil</th><th>Result</th></tr></thead>
+          <tbody id="fbResultBody"></tbody>
+        </table>
+      </div>
+      <div id="fbBanner" style="margin-top:12px"></div>
+    </section>
+  </div>
+
+  <!-- ===================== Book -> Floor ===================== -->
+  <div id="paneBF" hidden>
+    <section>
+      <div class="sec-head">
+        <h2>Which bin?</h2>
+        <div class="toolbar">
+          <button id="bfPick" class="gold"><svg class=ic aria-hidden=true><use href=/icons/sprite.svg#dices></use></svg> Pick a bin for me</button>
+          <select id="bfBinSelect"></select>
+        </div>
+      </div>
+      <div id="bfBinInfo"></div>
+    </section>
+
+    <section id="bfListSection" hidden>
+      <div class="sec-head"><h2>Go find these cards <span class="muted" id="bfHdr"></span></h2></div>
+      <div class="table-wrap">
+        <table>
+          <thead><tr><th></th><th>Card</th><th>Printing</th><th>Foil</th><th class="num">Expected qty</th><th>Found?</th></tr></thead>
+          <tbody id="bfBody"></tbody>
+        </table>
+      </div>
+      <div class="toolbar"><button id="bfSubmit" class="gold">Submit</button></div>
+    </section>
+
+    <section id="bfResultSection" hidden>
+      <div class="sec-head"><h2>Results <span class="muted" id="bfResultHdr"></span></h2></div>
+      <div id="bfBanner"></div>
+    </section>
+  </div>
+
+  <!-- ===================== Full Count ===================== -->
+  <div id="paneFull" hidden>
+    <section>
+      <div class="sec-head"><h2>Which bin?</h2>
+        <div class="toolbar">
+          <button id="fcPick" class="gold"><svg class=ic aria-hidden=true><use href=/icons/sprite.svg#dices></use></svg> Pick a bin for me</button>
+          <select id="fcBin"></select>
+          <button id="fcSend" title="Put this bin on the floor's Count list (Warehouse Mode)"><svg class=ic aria-hidden=true><use href=/icons/sprite.svg#arrow-right></use></svg> Send to the floor</button>
+        </div>
+      </div>
+    </section>
+
+    <section id="fcBookSection" hidden>
+      <div class="sec-head"><h2>Book stacks <span class="muted" id="fcHdr"></span></h2></div>
+      <div class="hint" style="margin-top:0">Counted quantity starts at what the book says — only change the ones
+        that are actually different. Rows you don't touch cost nothing to confirm.</div>
+      <div id="fcTote"></div>
+      <div class="table-wrap">
+        <table>
+          <thead><tr><th></th><th>Card</th><th>Printing</th><th>Foil</th><th>Condition</th>
+            <th class="num">Book qty</th><th class="num">Counted qty</th></tr></thead>
+          <tbody id="fcBody"></tbody>
+        </table>
+      </div>
+
+      <div class="sec-head" style="margin-top:18px"><h2>Found, not in the book</h2></div>
+      <div class="fields" style="grid-template-columns:minmax(0,1.2fr) minmax(0,1.2fr) 110px 130px 90px 90px">
+        <label style="position:relative">Card name
+          <input id="fcSearch" placeholder="Start typing a card name…" autocomplete="off">
+          <div id="fcAcList" class="ac-list" hidden></div>
+        </label>
+        <label>Printing <select id="fcPrint"><option value="">— pick a card first —</option></select></label>
+        <label>Finish <select id="fcFoil"><option value="nonfoil">Non-foil</option><option value="foil">Foil</option><option value="etched">Etched foil</option></select></label>
+        <label>Condition <select id="fcCond"></select></label>
+        <label>Qty <input id="fcQty" type="number" min="1" value="1"></label>
+        <label class="row" style="align-self:end"><button id="fcAddNew" class="small">+ Add</button></label>
+      </div>
+      <div class="table-wrap">
+        <table>
+          <thead><tr><th></th><th>Card</th><th>Printing</th><th>Foil</th><th>Condition</th><th class="num">Qty</th><th style="width:34px"></th></tr></thead>
+          <tbody id="fcNewBody"><tr><td colspan="7" class="empty">Nothing added yet.</td></tr></tbody>
+        </table>
+      </div>
+
+      <div class="toolbar" style="margin-top:12px"><button id="fcApply" class="gold">Apply full count</button></div>
+    </section>
+  </div>
+
+  <!-- ===================== Sealed Full Count ===================== -->
+  <div id="paneSealed" hidden>
+    <p class="hint" style="margin-top:0">Only a full recount of one bin's sealed stock - sealed's much smaller SKU
+      count per store makes a sampling-based check far less useful than it is for a wall of card bins.</p>
+    <section>
+      <div class="sec-head"><h2>Which bin?</h2>
+        <div class="toolbar">
+          <button id="scPick" class="gold"><svg class=ic aria-hidden=true><use href=/icons/sprite.svg#dices></use></svg> Pick a bin for me</button>
+          <select id="scBin"></select>
+          <button id="scSend" title="Put this bin on the floor's Count list (Warehouse Mode)"><svg class=ic aria-hidden=true><use href=/icons/sprite.svg#arrow-right></use></svg> Send to the floor</button>
+        </div>
+      </div>
+    </section>
+
+    <section id="scBookSection" hidden>
+      <div class="sec-head"><h2>Book stock <span class="muted" id="scHdr"></span></h2></div>
+      <div class="hint" style="margin-top:0">Counted quantity starts at what the book says — only change the ones
+        that are actually different.</div>
+      <div id="scTote"></div>
+      <div class="table-wrap">
+        <table>
+          <thead><tr><th>Product</th><th>Set</th><th class="num">Book qty</th><th class="num">Counted qty</th></tr></thead>
+          <tbody id="scBody"></tbody>
+        </table>
+      </div>
+
+      <div class="sec-head" style="margin-top:18px"><h2>Found, not in the book</h2></div>
+      <div class="fields" style="grid-template-columns:minmax(0,1.6fr) 90px 90px">
+        <label class="span-all" style="position:relative">Product name
+          <input id="scSearch" placeholder="Start typing a product name…" autocomplete="off">
+          <div id="scAcList" class="ac-list" hidden></div>
+        </label>
+        <label>Qty <input id="scQty" type="number" min="1" value="1"></label>
+        <label class="row" style="align-self:end"><button id="scAddNew" class="small">+ Add</button></label>
+      </div>
+      <div class="table-wrap">
+        <table>
+          <thead><tr><th>Product</th><th>Set</th><th class="num">Qty</th><th style="width:34px"></th></tr></thead>
+          <tbody id="scNewBody"><tr><td colspan="4" class="empty">Nothing added yet.</td></tr></tbody>
+        </table>
+      </div>
+
+      <div class="toolbar" style="margin-top:12px"><button id="scApply" class="gold">Apply full count</button></div>
+    </section>
+  </div>
+</main>
+
+<script src="/js/shipCost.js"></script>
+<script src="/js/priceRuleEngine.js"></script>
+<script src="/js/core.js"></script>
+<script src="/js/glossary.js"></script>
+<script src="/js/ui.js"></script>
+<script src="/cycle-count.page.js"></script>
+</body>
+</html>

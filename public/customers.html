@@ -1,0 +1,171 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<title>Customers · Grimoire</title>
+<link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'><rect width='32' height='32' rx='2' fill='%23151617'/><rect x='8' y='5' width='17' height='22' rx='1.5' fill='%231d1e21' stroke='%23f26b1d' stroke-width='2'/><path d='M11.6 5.8v20.4' stroke='%23f26b1d' stroke-width='1.6' opacity='.75'/><path d='M18.6 11.4l3.4 4.6-3.4 4.6-3.4-4.6z' fill='%23f26b1d'/></svg>">
+<link rel="manifest" href="/manifest.webmanifest">
+<link rel="apple-touch-icon" href="/icons/icon-192.png">
+<meta name="theme-color" content="#151617">
+<link rel="stylesheet" href="/css/app.css">
+</head>
+<body>
+
+<main>
+  <div class="sec-head">
+    <h1>Customers <a class="help-link" data-full-only href="/help.html#customers" title="Help for this page" aria-label="Help for this page"><svg class=ic aria-hidden=true><use href=/icons/sprite.svg#circle-help></use></svg></a></h1>
+    <button id="custAdd" class="gold"><svg class=ic aria-hidden=true><use href=/icons/sprite.svg#plus></use></svg> Add customer</button>
+  </div>
+  <p class="page-intro">The people you sell to and the cards they're looking for.</p>
+
+  <div class="callout" id="gapCallout" hidden>
+    <span class="cico"><svg class=ic aria-hidden=true><use href=/icons/sprite.svg#package></use></svg></span><div class="cbody">
+      <h3 id="gapHead"></h3>
+      Grimoire only has a summary of these Manapool orders, with no buyer on it. Loading each order's details
+      (about one a second) adds those buyers as customers.
+      <div class="form-row" style="margin-top:8px;align-items:center">
+        <button id="gapLoad" class="small">Load their details</button>
+        <span id="gapStatus" class="muted" role="status" aria-live="polite"></span>
+      </div>
+    </div>
+  </div>
+
+  <div class="tabs">
+    <button id="tabList" class="seg active"><svg class=ic aria-hidden=true><use href=/icons/sprite.svg#users></use></svg> Customers</button>
+    <button id="tabCameIn" class="seg"><svg class=ic aria-hidden=true><use href=/icons/sprite.svg#bell></use></svg> Came in <span class="count" id="cameInCount">0</span></button>
+  </div>
+
+  <!-- ===================== Customers: table (detail opens in #custPanel) ===================== -->
+  <div id="paneList">
+    <section>
+      <input id="custSearch" placeholder="Search customers…" autocomplete="off" aria-label="Search customers">
+      <div class="table-wrap" style="margin-top:10px">
+        <table data-sort aria-label="Customers">
+          <thead><tr><th>Name</th><th class="num">Orders open</th><th class="num hide-sm">Orders placed</th><th class="num">Lifetime spend</th><th class="num">Wants</th><th class="num hide-sm">Store credit</th></tr></thead>
+          <tbody id="custBody"></tbody>
+        </table>
+      </div>
+      <div class="hint" id="custSpendNote" hidden>Lifetime spend is what they paid including shipping, less refunds
+        recorded on <b>Returns</b>. A <b>+</b> after it means at least that much: some of their older orders are no
+        longer in the orders cache, so those aren't counted.</div>
+    </section>
+  </div>
+
+  <!-- ===================== Came in ===================== -->
+  <div id="paneCameIn" hidden>
+    <section>
+      <div class="sec-head"><h2>Came in</h2><span class="muted">Wanted cards that came in. Tell the customer, then mark them told.</span></div>
+      <div class="table-wrap">
+        <table data-sort>
+          <thead><tr><th>Customer</th><th>Card</th><th class="hide-sm">Printing</th><th class="num">Available</th><th class="num hide-sm">Came in</th><th></th></tr></thead>
+          <tbody id="cameInBody"></tbody>
+        </table>
+      </div>
+    </section>
+    <section>
+      <div class="sec-head"><h2>Told recently</h2></div>
+      <div class="feed" id="toldFeed"></div>
+    </section>
+  </div>
+</main>
+
+<!-- ===================== Customer detail: slide-over (UI.slideOver) ===================== -->
+<div class="modal-backdrop slideover" id="custPanel" hidden>
+  <div class="slideover-panel" role="dialog" aria-modal="true" aria-labelledby="cdName">
+    <div class="slideover-head">
+      <span class="eyebrow">Customer</span>
+      <button type="button" class="small ghost" data-close title="Close" aria-label="Close"><svg class=ic aria-hidden=true><use href=/icons/sprite.svg#x></use></svg></button>
+    </div>
+    <div class="slideover-body" id="custDetail"></div>
+  </div>
+</div>
+
+<!-- ===================== Add / edit customer ===================== -->
+<div class="modal-backdrop" id="custModal" hidden>
+  <div class="modal" role="dialog" aria-modal="true" aria-labelledby="custModalTitle">
+    <h3 id="custModalTitle">Add customer</h3>
+    <div class="fields n2" style="margin-top:8px">
+      <label class="span2">Name <input id="cmName" maxlength="200" autocomplete="off"></label>
+      <label class="span2">Email (optional) <input id="cmEmail" type="email" maxlength="254" autocomplete="off"></label>
+      <label class="row span2"><input type="checkbox" id="cmEmailOk"> They agreed to be emailed about cards they want</label>
+      <label class="span2">Note (optional) <input id="cmNote" maxlength="1000" autocomplete="off"></label>
+    </div>
+    <div class="hint" id="cmMpHint" hidden>Manapool doesn't share buyers' emails. Only add one the buyer gave you
+      directly, and check the marketplace's rules first: some forbid contacting buyers off-platform.</div>
+    <div id="cmStatus" class="status"></div>
+    <div class="form-row" style="margin-top:16px">
+      <span class="spacer"></span>
+      <button id="cmCancel" class="ghost">Cancel</button>
+      <button id="cmSave" class="primary">Save</button>
+    </div>
+  </div>
+</div>
+
+<!-- ===================== Merge into… (#196): pick the customer to keep ===================== -->
+<div class="modal-backdrop" id="mergeModal" hidden>
+  <div class="modal" role="dialog" aria-modal="true" aria-labelledby="mergeModalTitle">
+    <h3 id="mergeModalTitle">Merge into…</h3>
+    <div class="hint" id="mgIntro" style="margin-top:0"></div>
+    <input id="mergeSearch" placeholder="Search customers…" autocomplete="off" aria-label="Search customers to merge into" style="margin-top:8px">
+    <div class="table-wrap" style="margin-top:8px;max-height:50vh;overflow:auto">
+      <table aria-label="Customers to merge into">
+        <thead><tr><th>Name</th><th class="num">Orders placed</th><th class="num">Wants</th></tr></thead>
+        <tbody id="mgBody"></tbody>
+      </table>
+    </div>
+    <div class="form-row" style="margin-top:16px">
+      <span class="spacer"></span>
+      <button id="mgCancel" class="ghost">Cancel</button>
+    </div>
+  </div>
+</div>
+
+<!-- ===================== Add want ===================== -->
+<div class="modal-backdrop" id="wantModal" hidden>
+  <div class="modal" role="dialog" aria-modal="true" aria-labelledby="wantModalTitle">
+    <h3 id="wantModalTitle">Add a want</h3>
+    <div class="fields n2" style="margin-top:8px">
+      <label class="span2" style="position:relative">Card name
+        <input id="wmName" placeholder="Start typing a card name…" autocomplete="off">
+        <div id="wmAcList" class="ac-list" hidden></div>
+      </label>
+    </div>
+    <div class="mode-toggle" style="margin-top:10px">
+      <button id="wmAny" class="seg active">Any printing</button>
+      <button id="wmExact" class="seg">One printing</button>
+    </div>
+    <div class="fields n2" id="wmPrintRow" hidden style="margin-top:8px">
+      <label>Printing <select id="wmPrint"><option value="">— pick a card first —</option></select></label>
+      <label>Finish
+        <select id="wmFinish">
+          <option value="nonfoil">Non-foil</option>
+          <option value="foil">Foil</option>
+          <option value="etched">Etched foil</option>
+        </select>
+      </label>
+    </div>
+    <div class="fields" style="margin-top:8px">
+      <label>Note (optional) <input id="wmNote" maxlength="500" placeholder="e.g. for her Mardu deck" autocomplete="off"></label>
+    </div>
+    <div class="hint">A want added while the card is already in stock won't show under <b>Came in</b>; the
+      "in stock now" figure beside it says so instead. Only copies that arrive later count.</div>
+    <div id="wmStatus" class="status"></div>
+    <div class="form-row" style="margin-top:16px">
+      <span class="spacer"></span>
+      <button id="wmCancel" class="ghost">Cancel</button>
+      <button id="wmSave" class="primary">Add want</button>
+    </div>
+  </div>
+</div>
+
+<script src="/js/shipCost.js"></script>
+<script src="/js/priceRuleEngine.js"></script>
+<script src="/js/core.js"></script>
+<script src="/js/glossary.js"></script>
+<script src="/js/ui.js"></script>
+<script src="/customers.page.js"></script>
+</body>
+</html>

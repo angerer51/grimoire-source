@@ -1,0 +1,75 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<title>Kiosk · Grimoire</title>
+<link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'><rect width='32' height='32' rx='2' fill='%23151617'/><rect x='8' y='5' width='17' height='22' rx='1.5' fill='%231d1e21' stroke='%23f26b1d' stroke-width='2'/><path d='M11.6 5.8v20.4' stroke='%23f26b1d' stroke-width='1.6' opacity='.75'/><path d='M18.6 11.4l3.4 4.6-3.4 4.6-3.4-4.6z' fill='%23f26b1d'/></svg>">
+<link rel="manifest" href="/manifest.webmanifest">
+<link rel="apple-touch-icon" href="/icons/icon-192.png">
+<meta name="theme-color" content="#151617">
+<link rel="stylesheet" href="/css/app.css">
+</head>
+<body>
+
+<main>
+  <div class="sec-head">
+    <h1>Kiosk <a class="help-link" href="/help.html#kiosk" title="Help for this page" aria-label="Help for this page"><svg class=ic aria-hidden=true><use href=/icons/sprite.svg#circle-help></use></svg></a></h1>
+    <button id="ksStart" class="gold" hidden disabled><svg class=ic aria-hidden=true><use href=/icons/sprite.svg#monitor></use></svg> Start kiosk on this device</button>
+  </div>
+  <p class="page-intro">Let customers enter their own orders on a screen in the store. <span class="muted" id="ksStore"></span></p>
+
+  <div id="ksDenied" hidden></div>
+
+  <!-- Tabs, not stacked boxes (#438): the start action is the header's, and its warning is in its confirm. -->
+  <div id="ksBody" hidden>
+    <div class="hint" id="ksNeedPin" hidden>Set the <a href="#tab=pin">staff PIN</a> before you start a kiosk.</div>
+    <div id="ksStartStatus" class="status"></div>
+
+    <div class="tabs" role="tablist" aria-label="Kiosk">
+      <button id="ksTabRunning" class="seg" role="tab"><svg class=ic aria-hidden=true><use href=/icons/sprite.svg#monitor></use></svg> Running kiosks <span class="badge" id="ksRunHdr" hidden></span></button>
+      <button id="ksTabPin" class="seg" role="tab"><svg class=ic aria-hidden=true><use href=/icons/sprite.svg#lock></use></svg> Staff PIN</button>
+      <button id="ksTabLimits" class="seg" role="tab"><svg class=ic aria-hidden=true><use href=/icons/sprite.svg#settings></use></svg> Order limits</button>
+    </div>
+
+    <div id="ksPaneRunning" role="tabpanel">
+      <div class="list-wrap">
+        <table class="list" id="ksRunTable" data-sort>
+          <thead><tr><th>Started</th><th>Started by</th><th class="hide-sm">Device</th><th><span class="sr-only">Actions</span></th></tr></thead>
+          <tbody id="ksRunBody"></tbody>
+        </table>
+      </div>
+    </div>
+
+    <div id="ksPanePin" role="tabpanel" hidden>
+      <p class="hint" style="margin-top:0" id="ksPinHint"></p>
+      <div class="fields n2">
+        <label>New PIN <input id="ksPin" type="password" inputmode="numeric" autocomplete="new-password" maxlength="8" placeholder="4 to 8 digits"></label>
+        <label>Type it again <input id="ksPin2" type="password" inputmode="numeric" autocomplete="new-password" maxlength="8"></label>
+      </div>
+      <div class="modal-actions"><span class="spacer"></span><button id="ksPinSave" class="primary">Set PIN</button></div>
+      <div id="ksPinStatus" class="status"></div>
+    </div>
+
+    <div id="ksPaneLimits" role="tabpanel" hidden>
+      <p class="hint" style="margin-top:0">For the whole account, like the PIN. Leave a box blank for no limit. A kiosk never sells more copies than are free to sell, whatever these say.</p>
+      <div class="fields n2">
+        <label>Most cards in one order <input id="ksMaxCards" type="number" min="1" step="1" inputmode="numeric" placeholder="No limit"></label>
+        <label>Most orders waiting per store <input id="ksMaxWaiting" type="number" min="1" step="1" inputmode="numeric" placeholder="No limit"></label>
+      </div>
+      <div class="modal-actions"><span class="spacer"></span><button id="ksLimitsSave" class="primary">Save limits</button></div>
+      <div id="ksLimitsStatus" class="status"></div>
+    </div>
+  </div>
+</main>
+
+<script src="/js/shipCost.js"></script>
+<script src="/js/priceRuleEngine.js"></script>
+<script src="/js/core.js"></script>
+<script src="/js/glossary.js"></script>
+<script src="/js/ui.js"></script>
+<script src="/kiosk-setup.page.js"></script>
+</body>
+</html>
