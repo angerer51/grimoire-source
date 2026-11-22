@@ -44,6 +44,7 @@ const pickInvite = require("./lib/pickInvite");
 const orderEntryListing = require("./lib/orderEntryListing");
 const kioskLib = require("./lib/kiosk");
 const inviteRequests = require("./lib/inviteRequests");
+const signupGuard = require("./lib/signupGuard");
 const orderLabels = require("./lib/orderLabels");
 const orderFees = require("./lib/orderFees");
 const shipCostBackfill = require("./lib/shipCostBackfill");
@@ -64,7 +65,7 @@ const PUBLIC = path.join(ROOT, "public");
 // schedule, so semver's "breaking change = major bump" promise doesn't
 // really apply. Bump this by hand on every deploy; the nav badge (ui.js)
 // and package.json both read/mirror this rather than hardcoding their own.
-const VERSION = "2026.11.21-01";
+const VERSION = "2026.11.22-01";
 
 /* ============================== Config ============================== */
 const DEFAULTS = {
@@ -73,6 +74,10 @@ const DEFAULTS = {
   baseUrl: "",
   dataDir: "",
   registration: "invite",           // open | invite | closed
+  // Open sign-up's guard (#506, server/lib/signupGuard.js): new accounts per
+  // client address, and across the whole site, in any 24 hours. Only a
+  // sign-up without an invite code is held to them; null turns one off.
+  signup: { perIpPerDay: 3, dailyCap: 200 },
   sessionDays: 30,                  // password again at least this often (absolute, from sign-in)
   sessionIdleDays: 7,               // signed out after this many days without a request (#268)
   secureCookie: false,
@@ -649,12 +654,72 @@ route("POST", "/api/auth/logout", async ({ req, res }) => {
   httpu.sendJson(res, 200, { ok: true }, { "Set-Cookie": auth.clearCookie(CFG, req) });
 }, { open: true });
 
+/* Open sign-up's guard (#506): see server/lib/signupGuard.js. Made on first
+   use, once CFG is loaded. */
+let openSignupGuardState = null;
+const openSignupGuard = () => openSignupGuardState || (openSignupGuardState = signupGuard.createGuard(CFG.signup));
+
+/* A sign-up in open mode without an invite code. Resolves true with one of
+   this address's sign-ups reserved (release it if the account isn't made),
+   or false once it has answered the request itself. A filled-in honeypot
+   gets the same 200 a bot would expect and nothing is created. Honeypot
+   hits and refusals for this address count against the sign-in throttle
+   under their own "signup:" key (not the invite code's "reg:"), so
+   a script that keeps trying is locked out for a while; the site-wide cap
+   doesn't, since tripping it isn't this visitor's doing. */
+function logCapTripped() {
+  const guard = openSignupGuard();
+  if (!guard.shouldLogCap()) return;
+  log("sign-up refused: the daily cap (" + guard.cap + " new accounts in 24 hours) is reached." +
+    " Open sign-ups wait until it clears; invite codes still work. signup.dailyCap in config.json sets it.");
+}
+// createUser's opts.refuseIf for an open sign-up: the cap, on the current list.
+function openSignupRefuseIf(db) {
+  const why = openSignupGuard().capRefusal(db.users);
+  if (why) logCapTripped();
+  return why;
+}
+
+async function guardOpenSignup(res, body, ip, users) {
+  // An IPv6 visitor is counted by its /64 (signupGuard.addressKey).
+  const keys = ["signup:" + signupGuard.addressKey(ip)];
+  const wait = lockedFor(keys);
+  if (wait) {
+    httpu.sendJson(res, 429, {
+      error: "Too many attempts. Try again in " + Math.ceil(wait / 60) + " minute(s)."
+    }, { "Retry-After": String(wait) });
+    return false;
+  }
+  if (signupGuard.honeypotHit(body)) {
+    noteFailure(keys);
+    log("sign-up not made (honeypot) from " + ip);
+    httpu.sendJson(res, 200, { ok: true });
+    return false;
+  }
+  const guard = openSignupGuard();
+  // A quick answer from the list read on arrival; createUser checks the cap
+  // again inside its lock (openSignupRefuseIf), where a burst can't race it.
+  if (guard.capReached(signupGuard.recentAccounts(users))) {
+    logCapTripped();
+    httpu.sendError(res, 503, signupGuard.REFUSE_CAP);
+    return false;
+  }
+  if (!guard.take(ip)) {
+    noteFailure(keys);
+    log("sign-up refused: " + signupGuard.addressKey(ip) + " already made " + guard.perIp + " account(s) in 24 hours");
+    httpu.sendError(res, 429, signupGuard.REFUSE_IP);
+    return false;
+  }
+  return true;
+}
+
 route("POST", "/api/auth/register", async ({ req, res }) => {
   const body = await httpu.readJsonBody(req, 8192);
   const ip = httpu.clientIp(req, CFG);
   const users = await auth.listUsers();
   const first = users.length === 0;
   let invite = null;
+  let openSignup = false;
   // Every problem with the form in one answer (#242), not one per attempt.
   // Pure checks on what was typed, so listing them next to a wrong invite
   // tells a code guesser nothing; the throttle below is unchanged (one
@@ -683,11 +748,17 @@ route("POST", "/api/auth/register", async ({ req, res }) => {
         return;
       }
       clearFailures(["reg:" + ip]);
+    } else {
+      // Open mode, no code (#506): the honeypot, this address's daily limit
+      // and the site-wide daily cap. Answered here, or one sign-up reserved.
+      if (!(await guardOpenSignup(res, body, ip, users))) return;
+      openSignup = true;
     }
   }
   if (problems.length) {
     // A good invite isn't spent on a form that can't be accepted yet.
     if (invite) await auth.releaseInvite(invite.code);
+    if (openSignup) openSignupGuard().release(ip);
     refuse(400, problems);
     return;
   }
@@ -720,10 +791,14 @@ route("POST", "/api/auth/register", async ({ req, res }) => {
   try {
     user = await auth.createUser({
       username: body.username, password: body.password,
-      displayName: body.displayName, email: body.email
+      displayName: body.displayName, email: body.email,
+      refuseIf: openSignup ? openSignupRefuseIf : null
     });
   } catch (e) {
     if (invite) await auth.releaseInvite(invite.code);
+    if (openSignup) openSignupGuard().release(ip);
+    // The cap, caught inside the users lock: an answer, not a server error.
+    if (openSignup && e.status === 503) { httpu.sendError(res, 503, e.message); return; }
     throw e;
   }
   if (invite) await auth.markInviteUsed(invite.code, user.id);

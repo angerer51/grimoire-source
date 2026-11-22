@@ -184,6 +184,10 @@ async function listUsers(opts) {
   return db.users.map(publicUser);
 }
 
+/* opts.refuseIf(db), optional (#506): called inside the users lock with the
+   current users.json; a string it returns refuses the account with a 503
+   and that text. Open sign-up passes its daily cap this way, so parallel
+   requests can't all read the same count and overshoot it. */
 async function createUser(opts) {
   const username = String(opts.username || "").trim().toLowerCase();
   const un = usernameProblem(username);
@@ -202,6 +206,8 @@ async function createUser(opts) {
       e.status = 409;
       throw e;
     }
+    const refusal = typeof opts.refuseIf === "function" ? opts.refuseIf(db) : null;
+    if (refusal) { const e = new Error(String(refusal)); e.status = 503; throw e; }
     const first = db.users.length === 0;
     const user = {
       id: httpu.randomId(12),

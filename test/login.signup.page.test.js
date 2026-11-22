@@ -250,4 +250,6 @@ test("open mode without a link: no invite field, plain tagline, blank code sent"
   $("password").value = "good-pass-1";
   await $("form").onsubmit({ preventDefault() {} });
   assert.equal(net.find(r => r.url === "/api/auth/register").body.invite, "");
+  // #506: the hidden honeypot goes with it, empty for a person.
+  assert.equal(net.find(r => r.url === "/api/auth/register").body.website, "");
 });

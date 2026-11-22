@@ -8,6 +8,10 @@
   "deploy": { "host": "", "dir": "/opt/grimoire", "user": "grimoire" },
 
   "registration": "invite",
+  "signup": {
+    "perIpPerDay": 3,
+    "dailyCap": 200
+  },
   "sessionDays": 30,
   "sessionIdleDays": 7,
   "secureCookie": false,

@@ -237,7 +237,9 @@ $("form").onsubmit = async e => {
         displayName: $("displayName").value.trim(),
         email: $("email").value.trim(),
         digest: $("digestOptIn").checked,
-        invite: $("invite").value.trim()
+        invite: $("invite").value.trim(),
+        // The hidden honeypot (#506), as on the invite request: only a bot fills it.
+        website: $("website").value
       });
       // A brand-new account, unconditionally - the tutorial is the first
       // thing that happens after creation, ?next= included (it finishes by
