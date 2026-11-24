@@ -919,6 +919,11 @@
           renderPick();
         };
       }
+      // A line that finished short on a picked ticket can still be filled (#526).
+      if (!live && p.status === "picked" && shortfall > 0 && !G.pickOrderCancelled(p)) {
+        td.innerHTML = '<button class="small chaseShort" title="Find the missing copies and pull them onto this ticket">' + UI.icon("triangle-alert") + " Chase</button>";
+        td.querySelector("button").onclick = e => { e.stopPropagation(); chaseShortUI(p.id, G.pickKey(it), e.currentTarget); };
+      }
       tr.appendChild(td);
       if (!isSealed) {
         UI.wireArtHover(tr, imgForLine(it));
@@ -988,6 +993,34 @@
     for (const l of affected) G.clearPickLineTicks(G.pickLists().find(q => q.id === l.pickListId), l.key);
     G.persist("Chase pick on " + p.id);
     renderPick();
+  }
+
+  /* Chase a short line on a picked ticket (#526): the copies are on the book in
+     another bin, or the short was a mistake and the picker confirms the copy is
+     in the bin. Pulled onto the ticket in one logged step. */
+  async function chaseShortUI(pickListId, key, btn) {
+    const notDone = "the chase wasn't applied.";
+    if (!await caughtUp(notDone, btn)) return;
+    const p = pickById(pickListId);
+    const opt = G.chaseShortOptions(pickListId, key);
+    if (!p || !opt) { renderPick(); return; }
+    const line = p.lines.find(l => G.pickKey(l) === key);
+    const options = [];
+    if (opt.onBook.length) options.push({ value: "book", label: "On the book: take " + opt.onBook.map(x => x.qty + " from " + x.name).join(", ") });
+    for (const b of opt.bins) options.push({ value: "at:" + b.locationId, label: "It's in " + b.name + ", the picker has it in hand" + (b.suggested ? " (short here)" : "") });
+    const choose = { label: "Where are the copies?", options, value: opt.onBook.length ? "book" : (opt.bins[0] || {}).locationId ? "at:" + opt.bins[0].locationId : "" };
+    const ok = await UI.confirmDialog(
+      line.name + " is short " + opt.need + " on " + p.id + ". Copies on the book elsewhere are taken from there. " +
+      "If the short was a mistake, choose the bin and confirm the copy is really there: it goes back on the book and comes straight off again, logged as a chase of this short.",
+      { title: "Chase this short", okLabel: "Pull onto ticket", choose });
+    if (ok !== true) return;
+    if (!await caughtUp(notDone, btn)) return;
+    const at = String(choose.value || "");
+    const out = G.chaseShortLine(pickListId, key, at.startsWith("at:") ? { foundAt: at.slice(3) } : {});
+    if (!out.ok) { UI.toast(out.error, "err"); renderPick(); return; }
+    G.persist("Chase a short on " + pickListId);
+    renderPick();
+    UI.toast("Pulled " + out.taken + " onto " + pickListId + (out.ticketShort ? ", still short on another line." : ". Nothing is short now."), "ok");
   }
 
   function computeWeightFromCheckboxes(p) {

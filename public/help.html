@@ -388,6 +388,7 @@
         <li>Marking a Manapool order's ticket shipped also marks the order shipped on Manapool. A table opens with a row per order: carrier (USPS to start; <i>Set all carriers</i> changes every row) and tracking number. Tracking is optional, except on rows marked <i>Tracking required</i> (Ground Advantage orders). Tick several tickets and press <i>Mark shipped</i> to do them together. If Manapool can't be reached or says no, the ticket stays on the Pick list tab as <i>not sent to Manapool</i>, with the reason and a <b>Retry</b> button; tick several of those and press <i>Mark shipped</i> to send them all again.</li>
         <li>If Manapool replaces, cancels or refunds an order after its ticket was made, the ticket says <i>replaced on Manapool</i> (or cancelled, or refunded) on the Pick list tab, with a red box on the ticket and in Warehouse Mode's pack step. It can't be completed, packed or marked shipped. An open ticket is discarded instead (it only set copies aside). In Warehouse Mode, cards already pulled for it finish as picked with the rest (the Finish screen says to set them aside), and its unpicked lines don't hold up the batch. A picked one, packed or not, has <b>Cancel and put back</b>: its cards go into a sorting tray (you choose which if you have several; one is made if you have none), each with its cost, ready to shelve with Warehouse Mode's put-away. The ticket goes, and its sale comes off Accounting, Statistics and the Dashboard. A sorting tray isn't a place you sell from, so nothing is listed while they wait there: put them away into a bin you sell from and the next Listings push can list them again. Any picked Manapool ticket has the button, for an order you know won't go out.</li>
       </ol>
+      <p><b>Chase a short line after picking:</b> a ticket that finished with a line short, and hasn't shipped, shows a <b>Chase</b> button on that line on the Pick list tab. Choose where the copies are: on the book in another bin (taken from there), or a bin where the short was a mistake and the card was really there. For that one, make sure the copy is in hand: Grimoire puts it back on the book and takes it straight off again in one logged step (the activity log says it was a chase of a short on that ticket). The line stops being short, the pull and its cost go onto the ticket, the <span class="short-tag">short</span> tag goes once nothing is short, and the bin's count request that short made is cleared. Chasing is done at the desk, not yet in Warehouse Mode.</p>
       <p>If a location has a <b>sorting method</b> (<a href="#locations">§2</a>), its lines follow that order on screen and on paper. The <b><svg class=ic aria-hidden=true><use href=/icons/sprite.svg#map-pin></use></svg></b> button next to a pull shows where the card sits.</p>
       <h3>Picking several orders together</h3>
       <p>Tick two or more tickets and press <b><svg class=ic aria-hidden=true><use href=/icons/sprite.svg#clipboard-list></use></svg> Pick together</b>. Each order stays its own ticket.</p>
@@ -828,6 +829,12 @@
   <div id="paneChangelog" hidden>
     <p class="page-intro">What changed in each release, newest first. Match the version to the one in <b>Settings</b>.</p>
 
+    <div class="changelog-entry">
+      <div class="ce-head"><span class="ce-ver">2026.11.24-01</span><span class="ce-date">Nov 24, 2026</span></div>
+      <ul>
+        <li>New: a ticket that finished picking with a line short now has a <b>Chase</b> button on <b>Order Fulfillment</b>. Pull the missing copy from another bin, or confirm it was really in the bin that was shorted by mistake. The line, the ticket's value and cost update, and the <b>short</b> tag goes.</li>
+      </ul>
+    </div>
     <div class="changelog-entry">
       <div class="ce-head"><span class="ce-ver">2026.11.22-01</span><span class="ce-date">Nov 22, 2026</span></div>
       <ul>

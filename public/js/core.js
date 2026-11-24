@@ -9102,6 +9102,118 @@ window.G = (function () {
     return rec;
   }
 
+  /* ---- Chase a short line after the ticket is picked (#526) ----
+     A line that finished short (pickedResult.shortfall) on a ticket that's
+     picked but not shipped can still be filled. Two cases, owner 2026-11-24:
+     the copies are on the book in another bin (pulled from there, `foundAt`
+     null), or the short was a mistake: the copy really is in `foundAt`, where
+     the book says 0 or the stack was deleted by the short. Then the picker
+     confirms it, and it's put back on the book and taken off in one logged
+     step. Either way the pull goes into pickedResult, the ticket's value,
+     cost and revenue move with it, and the short tag clears once nothing is
+     short. The bin's count request goes if the short on this ticket put it
+     there. The caller confirms and persists. */
+  function chaseShortOptions(pickListId, key) {
+    const p = pickLists().find(x => x.id === pickListId);
+    const it = p && p.lines.find(l => pickKey(l) === key);
+    if (!p || p.status !== "picked" || !it || !it.pickedResult || !(it.pickedResult.shortfall > 0)) return null;
+    const need = it.pickedResult.shortfall;
+    const a = allocatePick(Object.assign({}, it, { qty: need }), pickListAllocOpts(p), pickHolders(p));
+    const flag = COUNT_FLAG[it.kind === "sealed" ? "sealed" : "cards"];
+    const sellOnly = !!pickListAllocOpts(p);
+    // A bin with copies of this printing on the book is taken from (onBook); "found in the bin" is for a bin the book says is empty.
+    const stocked = new Set(stacksMatching(it).filter(r => r.quantity > 0).map(r => r.locationId));
+    const bins = state.locations.filter(l => (!sellOnly || l.sellFrom) && !stocked.has(l.id))
+      .map(l => ({ locationId: l.id, name: l.name, suggested: !!(l[flag] && String(l[flag].reason || "").includes(p.id)) }))
+      .sort((x, y) => (y.suggested - x.suggested) || String(x.name).localeCompare(String(y.name), undefined, { numeric: true, sensitivity: "base" }));
+    return { need, onBook: a.pulls.map(pu => ({ locationId: pu.locationId, name: locName(pu.locationId), qty: pu.take })), bins };
+  }
+  function chaseShortLine(pickListId, key, opts) {
+    const o = opts || {};
+    const p = pickLists().find(x => x.id === pickListId);
+    if (!p || p.status !== "picked") return { ok: false, error: "Only a picked ticket that hasn't shipped can be chased." };
+    const it = p.lines.find(l => pickKey(l) === key);
+    const res = it && it.pickedResult;
+    if (!res || !(res.shortfall > 0)) return { ok: false, error: "That line isn't short any more." };
+    const sealed = it.kind === "sealed";
+    const want = Math.min(res.shortfall, Math.max(1, parseInt(o.qty, 10) || res.shortfall));
+    const pulls = [];   // { rec, take, back }
+    if (o.foundAt) {
+      if (!locById(o.foundAt)) return { ok: false, error: "That bin isn't there any more." };
+      if (stacksMatching(it).some(r => r.locationId === o.foundAt && r.quantity > 0)) return { ok: false, error: "The book has copies there: take from that bin instead." };
+      let rec = stacksMatching(it).find(r => r.locationId === o.foundAt && !r.held);
+      if (!rec) {
+        if (sealed) return { ok: false, error: "Add that sealed product to the bin first." };
+        const like = state.cards.find(r => r.set === it.set && normNum(r.collector) === normNum(it.collector) &&
+          (r.lang || "en") === (it.lang || "en") && r.finish === (it.finish || "nonfoil"));
+        const t = Object.assign({ name: it.name }, pickFields(like, PRINTING_KEYS),
+          { set: it.set, collector: it.collector, lang: it.lang || "en", finish: it.finish || "nonfoil", condition: it.condition || "NM",
+            locationId: o.foundAt, quantity: 0, listedQty: 0 });
+        if (t.price == null && it.unitPrice != null) t.price = it.unitPrice;
+        rec = normalizeCard(t);
+        state.cards.push(rec);
+      }
+      // The copies are physically here, so the book gains them and the pick takes them: one step.
+      pulls.push({ rec, take: want, back: true });
+    } else {
+      const a = allocatePick(Object.assign({}, it, { qty: want }), pickListAllocOpts(p), pickHolders(p));
+      for (const pu of a.pulls) pulls.push({ rec: (sealed ? state.sealed : state.cards).find(x => x.id === pu.recordId), take: pu.take });
+    }
+    if (!pulls.length || pulls.some(x => !x.rec)) return { ok: false, error: "No copies on the book in any bin to take." };
+    const keepPutBack = isCounterSale(p) || isManapoolOrderTicket(p);
+    let value = 0, cogs = 0, revenue = 0, taken = 0;
+    for (const { rec: r, take, back } of pulls) {
+      const before = r.quantity + (back ? take : 0);   // what the book shows once the copies are put back
+      if (back) {
+        // The copy comes back with its cost: this stack's average, else another stack of the printing's; none if none has one.
+        const unit = Number(r.costQty) > 0 ? r.avgCost
+          : (stacksMatching(it).find(x => x !== r && Number(x.costQty) > 0 && x.avgCost != null) || {}).avgCost;
+        if (unit != null) applyCost(r, take, unit);
+      }
+      const lineCogs = Number(r.costQty) > 0 ? round2(r.avgCost * Math.min(take, r.costQty)) : null;
+      const pull = { locationId: r.locationId, qty: take };
+      if (keepPutBack && !sealed) pull.back = putBackSnapshot(r, take);
+      res.pulls.push(pull);
+      value = round2(value + take * (r.price == null ? 0 : r.price));
+      if (lineCogs != null) cogs = round2(cogs + lineCogs);
+      if (it.unitPrice != null) revenue = round2(revenue + it.unitPrice * take);
+      const note = "Chase of a short on " + p.id + (back ? ": found in the bin, put back on the book and taken off" : ": taken from another bin");
+      logAudit(sealed
+        ? { action: "sealed-edit", name: r.name, qty: -take, oldQty: before, newQty: before - take, from: locName(r.locationId),
+          cost: lineCogs == null ? null : -lineCogs, note }
+        : { action: "chase-pick", ...auditCard(r), qty: -take, oldQty: before, newQty: before - take, from: locName(r.locationId),
+          cost: lineCogs == null ? null : -lineCogs, note });
+      removeCost(r, take);
+      r.quantity = before - take;
+      if (r.listedQty > r.quantity) r.listedQty = Math.max(0, r.quantity);
+      taken += take;
+    }
+    state.cards = state.cards.filter(r => r.quantity > 0);
+    state.sealed = state.sealed.filter(r => r.quantity > 0);
+    normalizeMerge({ silent: true });
+    res.shortfall -= taken;
+    res.value = round2(res.value + value);
+    res.cogs = round2(res.cogs + cogs);
+    p.revenue = round2((Number(p.revenue) || 0) + revenue);
+    p.cogs = round2((Number(p.cogs) || 0) + cogs);
+    if (isManapoolOrderTicket(p)) p.shipCost = shipCostOfSale(p);
+    // The completion's own history event reads the same as the ticket does.
+    const h = state.history.find(x => isPickEventOf(x, p));
+    if (h) {
+      h.revenue = p.revenue; h.cogs = p.cogs;
+      h.totalCards = (Number(h.totalCards) || 0) + taken;
+      h.short = p.lines.filter(l => l.pickedResult && l.pickedResult.shortfall > 0).length;
+      for (const { rec: r, take } of pulls) h.lines.push({ name: it.name, set: it.set, collector: it.collector, finish: it.finish,
+        qty: take, from: locName(r.locationId), unitPrice: it.unitPrice != null ? it.unitPrice : null });
+    }
+    // The count request the short put on this bin goes with the mistake it was for.
+    if (o.foundAt) {
+      const loc = locById(o.foundAt), f = COUNT_FLAG[sealed ? "sealed" : "cards"];
+      if (loc && loc[f] && String(loc[f].reason || "").includes(p.id)) loc[f] = null;
+    }
+    return { ok: true, taken, stillShort: res.shortfall, ticketShort: pickListIsShort(p) };
+  }
+
   /* ============================== Bin labels and the count list (#386) ==============================
      A bin's QR label holds this prefix plus the location's id, not its name:
      renaming a bin doesn't void its printed label, and a word typed into a
@@ -11442,7 +11554,7 @@ window.G = (function () {
     enterWalkInOrder, handOverCounterSale, counterSaleTotal, cancelCounterSale, orderEntryListingSync,
     orderWasCancelled, noteOrderStatuses, loadCancelledOrders, pickOrderCancelled, sortingTrays, cancelPickedOrder, rfCancelledOrders,
     saleDate, isOrderSale, awaitsShip,
-    pickListIsShort, chasePickAdjust, pickListForOrder, ensureOrderPickList,
+    pickListIsShort, chasePickAdjust, chaseShortOptions, chaseShortLine, pickListForOrder, ensureOrderPickList,
     binLabelText, binFromLabel, checkBinScan, keyBin, BIN_KEY_REASONS, binScanRequired, logBinCheck, requestBinCount, binsToCount,
     moveCopies, rfFindCards, rfCardWhere, rfStack, rfBinList, rfBinView, rfMoveCheck, rfMoveCards,
     openReturns, openReturn, closeReturn, discardReturn, returnSummary, returnCostRows, returnSaleCosts, returnExpectedFromOrder,

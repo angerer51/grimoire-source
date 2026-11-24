@@ -44,6 +44,8 @@
       def: "Gathering copies of a card spread over several locations into one. Putaway picks the location that already holds the most, and you can change it." },
     { id: "cost-basis", term: "Cost basis", fixed: ["cost basis", "cost bases"],
       def: "What you paid for a card. It is optional, so it is often blank. Gain and profit figures only count cards that have one." },
+    { id: "chase-pick", term: "Chase pick", forms: ["chase pick"],
+      def: "Going after a card a picker couldn't find where Grimoire said it was: the stack is corrected and the pull moves to the next bin. A line that finished short on a picked ticket can be chased too, from another bin or from the bin the short was a mistake in." },
     { id: "cycle-count", term: "Cycle Count", full: true, forms: ["cycle count"],
       def: "A spot-check of a bin against what Grimoire says it holds. Floor to Book starts from cards you pull off the shelf. Book to Floor goes through the bin card by card." },
     { id: "deck-list", term: "Deck List", forms: ["deck list"],
