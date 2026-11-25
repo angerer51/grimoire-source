@@ -35,6 +35,7 @@
       </div>
       <span class="spacer"></span>
       <button id="acctCsv">Export CSV</button>
+      <button id="acctLinesCsv" title="One row per card, with each order's shipping, fees and refund on their own rows">Export card lines CSV</button>
     </div>
     <div class="tiles" id="acctTiles" style="margin-top:10px"></div>
     <div class="tabs" style="margin-top:14px">
@@ -56,7 +57,7 @@
     </div>
 
     <div id="panePnl" hidden>
-    <div class="hint" style="margin-top:0">One row per calendar month in the date range. <b>Net profit</b> is gross profit minus fees, shipping costs and refunds, plus returned stock.
+    <div class="hint" style="margin-top:0">One row per calendar month in the date range. Click a month to see its transactions. <b>Net profit</b> is gross profit minus fees, shipping costs and refunds, plus returned stock.
       <a href="/help.html#accounting-pnl">More in Help</a></div>
     <div class="callout warn" id="pnlFeesNote" hidden style="margin-top:10px">
       <span class="cico"><svg class=ic aria-hidden=true><use href=/icons/sprite.svg#triangle-alert></use></svg></span>
@@ -74,6 +75,17 @@
     </div>
   </section>
 </main>
+
+<!-- ===================== Transaction detail: slide-over (UI.slideOver) ===================== -->
+<div class="modal-backdrop slideover" id="acctPanel" hidden>
+  <div class="slideover-panel" role="dialog" aria-modal="true" aria-labelledby="acctDetailTitle">
+    <div class="slideover-head">
+      <span class="eyebrow">Transaction</span>
+      <button type="button" class="small ghost" data-close title="Close" aria-label="Close"><svg class=ic aria-hidden=true><use href=/icons/sprite.svg#x></use></svg></button>
+    </div>
+    <div class="slideover-body" id="acctDetail"></div>
+  </div>
+</div>
 
 <script src="/js/shipCost.js"></script>
 <script src="/js/priceRuleEngine.js"></script>

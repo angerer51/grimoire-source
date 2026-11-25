@@ -86,3 +86,25 @@ test("one card's view: its share of shipping by copies, paid into revenue and co
   assert.match(tiles, /\$10\.83<\/span><span class="lbl">Profit after shipping/);
   assert.match(pg.$("acctIntro").textContent, /split by copies/);
 });
+
+/* #528: the card-lines export covers the same rows as Export CSV, and a sale's lines add up to its row. */
+test("Export card lines CSV: one row per card plus the order's shipping, adding up to the transactions CSV", async () => {
+  const line = { name: "Echo", set: "abc", collector: "1", finish: "nonfoil", qty: 2, unitPrice: 5, pickedResult: { pulls: [{ qty: 2 }], cogs: 3 } };
+  const pg = await accountingPage([Object.assign(sale("PICK-2026-0001", UUID(1), "584368-1"),
+    { lines: [line], revenue: 12, cogs: 3, shippingRevenue: 2 })]);
+  const csv = {};
+  let which = "";
+  pg.sandbox.Blob = class { constructor(parts) { csv[which] = parts.join(""); } };
+  pg.G.downloadBlob = () => {};
+  which = "txns"; await pg.$("acctCsv").fire("click");
+  which = "lines"; await pg.$("acctLinesCsv").fire("click");
+  const rows = csv.lines.split("\r\n");
+  const head = rows[0].split(",");
+  assert.equal(head[0], "Date");
+  assert.ok(head.includes("Line revenue") && head.includes("Kind"));
+  const ri = head.indexOf("Line revenue");
+  const rev = rows.slice(1).reduce((s, r) => s + (Number(r.split(",")[ri]) || 0), 0);
+  assert.equal(rev, 12);
+  assert.match(csv.lines, /Shipping paid/);
+  assert.equal(csv.txns.split("\r\n").length, 2);
+});

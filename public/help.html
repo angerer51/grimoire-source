@@ -508,9 +508,9 @@
       <p>Pick <b>From</b> and <b>To</b> dates, or a shortcut (last 7 or 30 days, this month, last month, this quarter, year to date).</p>
       <ul class="deflist">
         <li><b>Tiles</b>: Revenue, COGS (what the cards you sold cost you), Gross profit, Earnings (what Manapool paid out after fees), Receipt spend and Refunds.</li>
-        <li><b>Transactions</b>: a revenue chart and one row per sale, receipt and return.</li>
-        <li><b>P&amp;L statement</b>: one row per month in your time zone, ending in <b>Net profit</b>.</li>
-        <li><b>Export CSV</b>: downloads the tab you're on.</li>
+        <li><b>Transactions</b>: a revenue chart and one row per sale, receipt and return. Click a row to see its cards, line by line, with shipping, fees and refunds underneath so the panel adds up to the row.</li>
+        <li><b>P&amp;L statement</b>: one row per month in your time zone, ending in <b>Net profit</b>. Click a month to see its transactions.</li>
+        <li><b>Export CSV</b>: downloads the tab you're on. On Transactions, <b>Export card lines CSV</b> gives one row per card instead, with each order's shipping, fees and refund on their own rows (<a href="#accounting-csv">how to read it</a>).</li>
       </ul>
       <div class="callout" id="accounting-numbers">
         <span class="cico"><svg class=ic aria-hidden=true><use href=/icons/sprite.svg#lightbulb></use></svg></span>
@@ -519,6 +519,7 @@
       </div>
       <h3 id="accounting-csv">Reading the CSV export</h3>
       <p><b>Date</b> is UTC. <b>Local Date</b> is the same moment in your time zone, and is the day the P&amp;L files the sale under. Use it to compare the two.</p>
+      <p>The card lines export has a <b>Kind</b> column: <b>Card</b> for a card, or what the row is (Shipping paid, Fees, Shipping cost, Earnings, Refund). Add up <b>Line revenue</b> for a sale's Revenue and <b>Line cost</b> for its COGS (or a receipt's Spend). <b>Amount</b> holds fees, shipping cost, earnings and refunds, and a return's cost put back.</p>
       <h3 id="accounting-pnl">Reading the P&amp;L statement</h3>
       <p><b>Gross profit</b> is revenue minus the cost of cards sold, before refunds. <b>Net profit</b> takes off Manapool fees, <b>Shipping</b> (packing and postage, <a href="#shipping-costs">below</a>) and refunds, then adds back <b>Returned stock</b>. It isn't the same as the Earnings tile, which doesn't subtract what the cards cost. Receipt spend isn't on it: stock becomes a cost only when it sells.</p>
       <h3 id="shipping-costs">Shipping costs</h3>
@@ -829,6 +830,14 @@
   <div id="paneChangelog" hidden>
     <p class="page-intro">What changed in each release, newest first. Match the version to the one in <b>Settings</b>.</p>
 
+    <div class="changelog-entry">
+      <div class="ce-head"><span class="ce-ver">2026.11.24-02</span><span class="ce-date">Nov 24, 2026</span></div>
+      <ul>
+        <li>New: on <b>Accounting</b>, click a sale, receipt or return to see the cards behind it, line by line, with the shipping, fees and refund that make up its total.</li>
+        <li>New: on the <b>P&amp;L statement</b>, click a month to see that month's transactions.</li>
+        <li>New: <b>Export card lines CSV</b> on Accounting downloads one row per card, for a spreadsheet.</li>
+      </ul>
+    </div>
     <div class="changelog-entry">
       <div class="ce-head"><span class="ce-ver">2026.11.24-01</span><span class="ce-date">Nov 24, 2026</span></div>
       <ul>

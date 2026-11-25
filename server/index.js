@@ -65,7 +65,7 @@ const PUBLIC = path.join(ROOT, "public");
 // schedule, so semver's "breaking change = major bump" promise doesn't
 // really apply. Bump this by hand on every deploy; the nav badge (ui.js)
 // and package.json both read/mirror this rather than hardcoding their own.
-const VERSION = "2026.11.24-01";
+const VERSION = "2026.11.24-02";
 
 /* ============================== Config ============================== */
 const DEFAULTS = {

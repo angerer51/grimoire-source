@@ -6681,6 +6681,111 @@ window.G = (function () {
   function monthKey(d) {
     return d.getFullYear() + "-" + String(d.getMonth() + 1).padStart(2, "0");
   }
+  /* ---------- Accounting drill-in (#528) ----------
+     The card lines behind one Transactions row, built from the same stored
+     fields accountingRows() (accounting.page.js) reads, so the slide-over, the
+     row and the line export can't disagree. `row` is that page's row, with its
+     source document on row.src; `filter` (optional) keeps only the lines the
+     #410 card filter keeps. Whatever the lines don't add up to is returned as
+     an order-level "extra" (shipping paid, fees, postage...), named in plain
+     words, so lines + extras always add up to the row's own figures.
+     -> { lines: [{ name, set, collector, condition, finish, lang, kind, qty, unit,
+          revenue, cost, profit, costBack, note }], extras: [{ kind, label, field:
+          "revenue"|"cost"|"amount", value }], costSplit, totals: { revenue, cost, costBack } } */
+  function txnDetail(row, filter) {
+    const src = (row && row.src) || {};
+    const lines = [], extras = [];
+    const known = v => v != null && v !== "" && isFinite(Number(v));
+    const ident = it => ({ name: it.name || "", set: it.set || "", collector: it.collector == null ? "" : String(it.collector),
+      condition: it.condition || "", finish: it.finish || "", lang: it.lang || it.language || "", kind: it.kind || "" });
+    let costSplit = true;
+    if (row.type === "Sale") {
+      for (const it of src.lines || []) {
+        if (filter && !filter(it)) continue;
+        const pulls = it.pickedResult ? it.pickedResult.pulls : null;
+        const qty = pulls ? pulls.reduce((s, x) => s + (Number(x.qty) || 0), 0) : (Number(it.qty) || 0);
+        if (!(qty > 0)) continue;
+        const unit = it.unitPrice != null ? Number(it.unitPrice) : null;
+        let revenue = null;
+        if (unit != null) revenue = pulls && pulls.length ? round2(pulls.reduce((s, x) => s + round2(unit * (Number(x.qty) || 0)), 0)) : round2(unit * qty);
+        const cost = it.pickedResult && typeof it.pickedResult.cogs === "number" ? round2(it.pickedResult.cogs) : null;
+        if (cost == null) costSplit = false;
+        lines.push(Object.assign(ident(it), { qty, unit, revenue, cost,
+          profit: revenue != null && cost != null ? round2(revenue - cost) : null }));
+      }
+      const lineRev = round2(lines.reduce((s, l) => s + (l.revenue || 0), 0));
+      const revDiff = round2((Number(row.revenue) || 0) - lineRev);
+      if (Math.abs(revDiff) >= 0.005) {
+        const ship = src.shippingRevenue != null ? Number(src.shippingRevenue) : null;
+        extras.push(filter ? { kind: "Shipping paid", label: "Shipping paid by the buyer (this card's share)", field: "revenue", value: revDiff }
+          : ship != null && Math.abs(ship - revDiff) < 0.005 ? { kind: "Shipping paid", label: "Shipping paid by the buyer", field: "revenue", value: revDiff }
+          : { kind: "Revenue not itemised", label: "Revenue not itemised by card", field: "revenue", value: revDiff });
+      }
+      const lineCost = round2(lines.reduce((s, l) => s + (l.cost || 0), 0));
+      const costDiff = round2((Number(row.cogs) || 0) - lineCost);
+      if (!costSplit) {
+        extras.push({ kind: "Cost not split", label: "Cost of the cards, for the whole " + (filter ? "share" : "order") + " (this sale was picked before Grimoire recorded each card's cost)", field: "cost", value: costDiff });
+      } else if (Math.abs(costDiff) >= 0.005) {
+        extras.push({ kind: "Cost not itemised", label: "Cost not itemised by card", field: "cost", value: costDiff });
+      }
+      if (!filter && row.fees != null && !row.counter) extras.push({ kind: "Fees", label: "Manapool fees", field: "amount", value: Number(row.fees) });
+      if (row.shipping != null) extras.push({ kind: "Shipping cost", label: filter ? "Packing and postage (this card's share)" : "Packing and postage cost", field: "amount", value: Number(row.shipping) });
+      if (row.earnings != null) extras.push({ kind: "Earnings", label: "Earnings (Manapool's payout)", field: "amount", value: Number(row.earnings) });
+    } else if (row.type === "Receipt") {
+      for (const it of src.lines || []) {
+        const qty = Number(it.qty) || 0;
+        if (!(qty > 0)) continue;
+        const unit = known(it.unitCost) ? Number(it.unitCost) : null;
+        lines.push(Object.assign(ident(it), { qty, unit, revenue: null, cost: unit != null ? round2(unit * qty) : null, profit: null }));
+      }
+      const diff = round2((Number(row.spend) || 0) - round2(lines.reduce((s, l) => s + (l.cost || 0), 0)));
+      if (Math.abs(diff) >= 0.005) extras.push({ kind: "Cost not itemised", label: "Spend not itemised by card (shipping, tax or rounding)", field: "cost", value: diff });
+    } else if (row.type === "Return") {
+      for (const it of src.lines || []) {
+        const qty = Number(it.qty) || 0;
+        if (!(qty > 0)) continue;
+        const disp = it.disposition || src.disposition || "restock";
+        const unit = known(it.unitCost) ? Number(it.unitCost) : null;
+        const back = returnRestoresCost(disp) && unit != null && unit > 0 ? round2(unit * qty) : 0;
+        lines.push(Object.assign(ident(it), { qty, unit, revenue: null, cost: null, profit: null, costBack: back,
+          note: disp === "restock" ? "Put back in stock" : disp === "damaged" ? "Damaged, written off" : "Not restocked" }));
+      }
+      const diff = round2((Number(row.costBack) || 0) - round2(lines.reduce((s, l) => s + (l.costBack || 0), 0)));
+      if (Math.abs(diff) >= 0.005) extras.push({ kind: "Rounding", label: "Rounding", field: "amount", value: diff });
+      if (row.refund != null) extras.push({ kind: "Refund", label: "Refunded to the buyer", field: "amount", value: Number(row.refund) });
+    }
+    const sum = (arr, f) => round2(arr.reduce((s, x) => s + (Number(f(x)) || 0), 0));
+    return { lines, extras, costSplit, totals: {
+      revenue: round2(sum(lines, l => l.revenue) + sum(extras.filter(e => e.field === "revenue"), e => e.value)),
+      cost: round2(sum(lines, l => l.cost) + sum(extras.filter(e => e.field === "cost"), e => e.value)),
+      costBack: round2(sum(lines, l => l.costBack) + sum(extras.filter(e => e.kind === "Rounding"), e => e.value))
+    } };
+  }
+  /* The line-by-line export (#528): the card lines of every row, then each
+     transaction's order-level amounts on a row of their own (Card blank, Kind
+     naming them), so each column sums to the transactions export for the same
+     dates: Line revenue = Revenue, Line cost = COGS (a sale) or Spend (a receipt),
+     Amount by Kind = Fees / Shipping Cost / Earnings / Refund / Returned Stock Cost. */
+  const TXN_LINE_HEAD = ["Date", "Local Date", "Type", "Reference", "Order", "Kind", "Card", "Set", "Collector #", "Condition",
+    "Finish", "Language", "Qty", "Price each", "Line revenue", "Line cost", "Line profit", "Amount", "Note"];
+  function txnLineExport(rows, filter, typeLabel) {
+    const out = [];
+    const blank = v => v == null ? "" : v;
+    for (const row of rows) {
+      const d = txnDetail(row, filter);
+      const head = [row.date, localDay(Date.parse(row.date)), typeLabel ? typeLabel(row) : row.type, row.ref, row.order];
+      for (const l of d.lines) {
+        out.push(head.concat(["Card", l.name, l.set, l.collector, l.condition, l.finish, l.lang, l.qty, blank(l.unit),
+          blank(l.revenue), blank(l.cost), blank(l.profit), blank(l.costBack), l.note || ""]));
+      }
+      for (const e of d.extras) {
+        out.push(head.concat([e.kind, "", "", "", "", "", "", "", "",
+          e.field === "revenue" ? e.value : "", e.field === "cost" ? e.value : "", "", e.field === "amount" ? e.value : "", ""]));
+      }
+    }
+    return { head: TXN_LINE_HEAD, rows: out };
+  }
+
   function pnlByMonth(rows, fromMs, toMs) {
     rows = rows || [];
     const blank = () => ({ sales: 0, salesMissingFees: 0, returns: 0,
@@ -11489,7 +11594,7 @@ window.G = (function () {
     nextReturnId, recordReturn, returnById,
 
     // accounting
-    pnlByMonth, saleShipCost, returnCostBack, returnRestoresCost, localDay, accountingPresetRange,
+    pnlByMonth, txnDetail, txnLineExport, saleShipCost, returnCostBack, returnRestoresCost, localDay, accountingPresetRange,
 
     // dashboard tiles (#298)
     dashLayout, dashLayoutClean, dayStartMs, monthStartMs, salesBetween, profitBetween, receiptsSince, returnsSince,

@@ -160,6 +160,7 @@ function loadPage(file, opts) {
     cardFilterChip() {}, cardFilterLabel: f => (f && f.name) || "",
     // A slide-over that is never open (Customers' detail panel).
     slideOver: () => ({ open() {}, close() {}, isOpen: () => false }),
+    onClose() {},
     barList: rows => "[bars " + rows.length + "]",
     lineChart: () => "[chart]",
     vendorCompare: () => "",

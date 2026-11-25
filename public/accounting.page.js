@@ -56,14 +56,18 @@
      cost was recorded gets its order's cost split by copies (`estimated`). */
   let cardFilter = UI.cardFilterFromUrl(), cardEstimated = false, introOrig = null;
   const copiesOf = it => it.pickedResult ? it.pickedResult.pulls.reduce((s, x) => s + (Number(x.qty) || 0), 0) : (Number(it.qty) || 0);
+  // The lines the card filter keeps; the drill-in panel and line export use it too.
+  function lineMatches(it) {
+    if (!cardFilter || it.kind === "sealed") return false;
+    return cardFilter.set && cardFilter.collector ? UI.cardFilterMatches(cardFilter, it)
+      : String(it.name || "").toLowerCase().includes(cardFilter.name.toLowerCase());
+  }
   function cardSale(p) {
-    const name = cardFilter.name.toLowerCase();
-    const exact = cardFilter.set && cardFilter.collector;
     let copies = 0, all = 0, revenue = 0, cogs = 0, hasLineCogs = true;
     for (const it of p.lines || []) {
       const n = copiesOf(it);
       all += n;
-      if (it.kind === "sealed" || !(exact ? UI.cardFilterMatches(cardFilter, it) : String(it.name || "").toLowerCase().includes(name))) continue;
+      if (!lineMatches(it)) continue;
       copies += n;
       if (it.unitPrice != null) revenue += it.unitPrice * n;
       if (it.pickedResult && typeof it.pickedResult.cogs === "number") cogs += it.pickedResult.cogs;
@@ -101,7 +105,7 @@
         if (!s || (!s.revenue && !s.cogs)) continue;
         if (s.estimated) cardEstimated = true;
         rows.push({
-          date, type: "Sale", counter, ref: p.id, order, paid, customerId,
+          date, type: "Sale", counter, ref: p.id, order, paid, customerId, src: p, key: p.id,
           revenue: s.revenue, cogs: s.cogs, fees: null, earnings: null,
           shipping: s.shipping, shipRule: s.shipping != null ? "This card's share, by copies" : "", spend: null, refund: null
         });
@@ -109,7 +113,7 @@
       }
       if (!counter && !p.revenue && !p.cogs) continue; // nothing recognised on this one - a manual/deck pick, leave it out
       rows.push({
-        date, type: "Sale", counter, ref: p.id, order, paid, customerId,
+        date, type: "Sale", counter, ref: p.id, order, paid, customerId, src: p, key: p.id,
         revenue: Number(p.revenue) || 0, cogs: Number(p.cogs) || 0,
         // No Manapool cut on a counter sale: no fee, and Earnings is Manapool's own payout.
         fees: counter ? 0 : p.fees == null ? null : Number(p.fees), earnings: p.earnings == null ? null : Number(p.earnings),
@@ -121,14 +125,14 @@
     for (const r of cardFilter ? [] : G.state.receipts) {
       if (!(Number(r.spend) > 0) || !dateInRange(r.ts, from, to)) continue;
       rows.push({
-        date: r.ts, type: "Receipt", ref: r.receiptId || "", order: "",
+        date: r.ts, type: "Receipt", ref: r.receiptId || "", order: "", src: r, key: r.id,
         revenue: null, cogs: null, fees: null, earnings: null, spend: Number(r.spend) || 0, refund: null
       });
     }
     for (const r of cardFilter ? [] : G.state.returns) {
       if (!dateInRange(r.ts, from, to)) continue;
       rows.push({
-        date: r.ts, type: "Return", ref: r.returnId || "", order: r.orderLabel || "",
+        date: r.ts, type: "Return", ref: r.returnId || "", order: r.orderLabel || "", src: r, key: r.id,
         revenue: null, cogs: null, fees: null, earnings: null,
         spend: null, refund: r.refundTotal == null ? null : Number(r.refundTotal),
         // Cost a restocked return put back into inventory - see G.returnCostBack().
@@ -228,9 +232,10 @@
       tile(G.money(refund), "Refunds", refund ? "neg" : "");
     renderAcctChart(rows);
     renderPnl(rows);
+    shownRows = rows;
     $("acctBody").innerHTML = rows.length ? rows.map(r => {
       const gross = r.type === "Sale" ? r.revenue - r.cogs : null;
-      return "<tr><td>" + G.esc(new Date(r.date).toLocaleDateString()) + "</td>" +
+      return '<tr class="click' + (panel.isOpen() && r.key === selectedKey ? " sel" : "") + '" tabindex="0" data-key="' + G.esc(r.key) + '"><td>' + G.esc(new Date(r.date).toLocaleDateString()) + "</td>" +
         '<td><span class="pill type">' + G.esc(typeLabel(r)) + "</span></td>" +
         "<td>" + G.esc(r.ref) + "</td>" +
         "<td>" + (r.customerId ? '<a href="/customers.html?id=' + encodeURIComponent(r.customerId) + '">' + G.esc(r.order) + "</a>"
@@ -248,6 +253,86 @@
         '<td class="num">' + (r.refund == null ? '<span class="muted">—</span>' : G.money(r.refund)) + "</td></tr>";
     }).join("") : UI.emptyRow(12, { icon: "search", title: "Nothing in this date range." });
     UI.reapplySorts();
+    if (panel.isOpen()) renderDetail();
+  }
+
+  /* ---------- Row drill-in (#528): the card lines behind one row ----------
+     All the arithmetic is G.txnDetail() (core.js, unit-tested), the same one
+     the line export uses, so the panel, the row and the export agree. */
+  const panel = UI.slideOver("acctPanel");
+  let shownRows = [], selectedKey = null;
+  const rowByKey = k => shownRows.find(r => r.key === k);
+  function markSelected() {
+    $("acctBody").querySelectorAll("tr[data-key]").forEach(tr => tr.classList.toggle("sel", panel.isOpen() && tr.dataset.key === selectedKey));
+  }
+  function openRow(key) {
+    if (!rowByKey(key)) return;
+    selectedKey = key;
+    renderDetail();
+    panel.open();
+    markSelected();
+  }
+  function onPanelClosed() {
+    const key = selectedKey;
+    selectedKey = null;
+    markSelected();
+    const tr = key && [...$("acctBody").querySelectorAll("tr[data-key]")].find(t => t.dataset.key === key);
+    try { if (tr) tr.focus(); } catch (e) {}
+  }
+  const cell = v => v == null ? '<span class="muted">—</span>' : G.money(v);
+  // Set · # · condition · language, finish as the usual badge (nothing for non-foil).
+  function printing(l, extra) {
+    const bits = [l.qty + " × " + (l.unit == null ? "—" : G.money(l.unit)), l.set ? String(l.set).toUpperCase() : "", l.collector ? "#" + l.collector : "", l.condition, l.lang ? String(l.lang).toUpperCase() : "", extra].filter(Boolean);
+    const badge = l.finish === "foil" || l.finish === "etched" ? UI.finishBadge(l.finish) : "";
+    return bits.length || badge ? '<div class="faint">' + G.esc(bits.join(" · ")) + (badge ? " " + badge : "") + "</div>" : "";
+  }
+  function renderDetail() {
+    const r = rowByKey(selectedKey);
+    const box = $("acctDetail");
+    if (!r) { box.innerHTML = ""; if (panel.isOpen()) panel.close(); return; }
+    const hadFocus = box.contains(document.activeElement);
+    const d = G.txnDetail(r, cardFilter ? lineMatches : null);
+    const sale = r.type === "Sale", receipt = r.type === "Receipt", ret = r.type === "Return";
+    const orderHtml = r.customerId ? '<a href="/customers.html?id=' + encodeURIComponent(r.customerId) + '">' + G.esc(r.order) + "</a>" : G.esc(r.order);
+    const facts = [["Date", G.esc(new Date(r.date).toLocaleString())], ["Reference", G.esc(r.ref)]];
+    if (r.order) facts.push([r.counter ? "Customer" : "Order", orderHtml]);
+    if (r.paid) facts.push(["Paid by", G.esc(r.paid)]);
+    if (receipt && r.src.source) facts.push(["Source", G.esc(r.src.source)]);
+    if (receipt && r.src.note) facts.push(["Note", G.esc(r.src.note)]);
+    if (ret && r.src.buyer) facts.push(["Buyer", G.esc(r.src.buyer)]);
+    if (ret && r.src.reason) facts.push(["Reason", G.esc(r.src.reason)]);
+    if (ret && r.src.note) facts.push(["Note", G.esc(r.src.note)]);
+    const head = ["Card"];
+    if (sale) head.push("Revenue", "Cost", "Profit"); else if (receipt) head.push("Cost"); else head.push("Amount");
+    const span = head.length;
+    const tail = sale ? 3 : 1;   // money columns; the label spans the rest   // the columns after "Cost each" / "Price each"
+    const body = d.lines.map(l => {
+      const name = l.kind === "sealed" ? G.esc(l.name) : UI.cardLink({ name: l.name, set: l.set, collector: l.collector, finish: l.finish, lang: l.lang });
+      let h = "<tr><td>" + name + printing(l, ret ? l.note : "") + "</td>";
+      if (sale) h += '<td class="num">' + cell(l.revenue) + '</td><td class="num">' + cell(l.cost) + '</td><td class="num ' + (l.profit == null ? "" : l.profit >= 0 ? "good" : "bad") + '">' + cell(l.profit) + "</td>";
+      else if (receipt) h += '<td class="num">' + cell(l.cost) + "</td>";
+      else h += '<td class="num">' + cell(l.costBack) + "</td>";
+      return h + "</tr>";
+    }).join("") || '<tr><td colspan="' + span + '" class="muted">No card lines are stored for this one' + (cardFilter ? " that match the card filter" : "") + ".</td></tr>";
+    const minus = e => (e.kind === "Fees" || e.kind === "Shipping cost" || e.kind === "Refund" ? "− " : "") + G.money(e.value);
+    const extras = d.extras.map(e => '<tr' + (e.kind === "Earnings" ? ' class="muted"' : "") + '><td colspan="' + (span - tail) + '">' + G.esc(e.label) + "</td>" +
+      (sale ? '<td class="num">' + (e.field === "revenue" ? G.money(e.value) : "") + '</td><td class="num">' + (e.field === "cost" ? G.money(e.value) : e.field === "amount" ? minus(e) : "") + "</td><td></td>"
+        : receipt ? '<td class="num">' + G.money(e.value) + "</td>"
+        : '<td class="num">' + minus(e) + "</td>") + "</tr>").join("");
+    const total = sale
+      ? '<td class="num">' + G.money(d.totals.revenue) + '</td><td class="num">' + G.money(d.totals.cost) + '</td><td class="num">' + G.money(G.round2(d.totals.revenue - d.totals.cost)) + "</td>"
+      : receipt ? '<td class="num">' + G.money(d.totals.cost) + "</td>"
+      : '<td class="num">' + G.money(d.totals.costBack) + "</td>";
+    box.innerHTML =
+      '<div class="sec-head"><h2 id="acctDetailTitle" tabindex="-1">' + G.esc(typeLabel(r)) + "</h2></div>" +
+      '<dl class="kv">' + facts.map(f => "<dt>" + f[0] + "</dt><dd>" + f[1] + "</dd>").join("") + "</dl>" +
+      (cardFilter ? '<div class="hint">Showing only the lines for ' + G.esc(UI.cardFilterLabel(cardFilter)) + ", matching the row's figures.</div>" : "") +
+      '<div class="list-wrap" style="margin-top:10px"><table class="list acct-lines"><thead><tr>' +
+        head.map((h, i) => "<th" + (i >= 1 ? ' class="num"' : "") + ">" + h + "</th>").join("") + "</tr></thead>" +
+        "<tbody>" + body + extras + "</tbody>" +
+        '<tfoot><tr><td colspan="' + (span - tail) + '">' + (ret ? "Cost put back" : "Total") + "</td>" + total + "</tr></tfoot></table></div>" +
+      (sale && !d.costSplit ? '<div class="hint">This sale was picked before Grimoire recorded each card&#39;s cost, so its cost is shown for the whole ' + (cardFilter ? "share" : "order") + " rather than per card.</div>" : "");
+    if (hadFocus && !box.contains(document.activeElement)) { try { $("acctDetailTitle").focus(); } catch (e) {} }
   }
   function exportAccountingCsv() {
     const rows = accountingRows(true);
@@ -269,6 +354,17 @@
     }
     G.downloadBlob(new Blob([lines.join("\r\n")], { type: "text/csv" }), "grimoire-accounting.csv");
     UI.toast("Exported " + rows.length + " row" + (rows.length === 1 ? "" : "s") + ".", "ok");
+  }
+
+  /* One row per card line, plus each transaction's order-level amounts on a row of
+     their own (G.txnLineExport, core.js), for the same dates and rows as Export CSV. */
+  function exportLinesCsv() {
+    const rows = accountingRows(true);
+    if (!rows.length) { UI.toast("Nothing in this date range to export.", "err"); return; }
+    const out = G.txnLineExport(rows, cardFilter ? lineMatches : null, typeLabel);
+    const lines = [out.head.map(G.csvCell).join(",")].concat(out.rows.map(r => r.map(G.csvCell).join(",")));
+    G.downloadBlob(new Blob([lines.join("\r\n")], { type: "text/csv" }), "grimoire-accounting-lines.csv");
+    UI.toast("Exported " + out.rows.length + " line" + (out.rows.length === 1 ? "" : "s") + " from " + rows.length + " transaction" + (rows.length === 1 ? "" : "s") + ".", "ok");
   }
 
   /* ---------- P&L statement (issue #48) ----------
@@ -298,7 +394,7 @@
     const { months, totals } = currentPnl(rows);
     const fmtDay = ms => new Date(ms).toLocaleDateString(undefined, { month: "short", day: "numeric" });
     $("pnlBody").innerHTML = months.length ? months.map(m =>
-      '<tr><td data-v="' + (m.year * 100 + m.month) + '">' + G.esc(monthLabel(m)) +
+      '<tr class="click" tabindex="0" data-month="' + m.start + "-" + m.end + '" title="See this month\'s transactions"><td data-v="' + (m.year * 100 + m.month) + '">' + G.esc(monthLabel(m)) +
         (m.partial ? ' <span class="muted">' + G.esc(fmtDay(m.start) + " – " + fmtDay(m.end)) + "</span>" : "") +
         "</td>" + pnlCells(m) + "</tr>").join("")
       : UI.emptyRow(10, { icon: "money", title: "Pick a date range to see the statement." });
@@ -329,6 +425,16 @@
   let tab = "txns";
   let tabs;
 
+  // A P&L month row: the Transactions tab, for that month (clipped to the range, as the row is).
+  function openMonth(range) {
+    const [from, to] = range.split("-").map(Number);
+    if (!from || !to) return;
+    $("acctFrom").value = G.localDay(from);
+    $("acctTo").value = G.localDay(to);
+    renderAccounting();
+    tabs.show("txns");
+  }
+
   // Local calendar dates, stepped by calendar day: see G.accountingPresetRange().
   function setRange(key) {
     const r = G.accountingPresetRange(key, Date.now());
@@ -354,6 +460,22 @@
     $("acctFrom").onchange = renderAccounting;
     $("acctTo").onchange = renderAccounting;
     $("acctCsv").onclick = () => (tab === "pnl" ? exportPnlCsv() : exportAccountingCsv());
+    $("acctLinesCsv").onclick = exportLinesCsv;
+    // Rows are redrawn on every change, so listen once on each tbody.
+    const activate = (body, attr, fn) => {
+      const rowOf = e => (e.target && e.target.closest && !e.target.closest("a") ? e.target.closest("tr[" + attr + "]") : null);
+      body.addEventListener("click", e => { const tr = rowOf(e); if (tr) fn(tr.getAttribute(attr)); });
+      body.addEventListener("keydown", e => {
+        if (e.key !== "Enter" && e.key !== " ") return;
+        const tr = rowOf(e);
+        if (!tr || e.target !== tr) return;
+        e.preventDefault();
+        fn(tr.getAttribute(attr));
+      });
+    };
+    activate($("acctBody"), "data-key", openRow);
+    activate($("pnlBody"), "data-month", openMonth);
+    UI.onClose("acctPanel", onPanelClosed);
     // The tab is remembered (UI.pageTabs); the Export button follows it.
     tabs = UI.pageTabs({ tabs: [
       { id: "txns", button: "tabTxns", panes: ["paneTxns"] },
@@ -361,6 +483,7 @@
     ], onShow: t => {
       tab = t;
       $("acctCsv").textContent = t === "pnl" ? "Export P&L CSV" : "Export CSV";
+      $("acctLinesCsv").hidden = t === "pnl";
     } });
     $("acctPresets").onclick = e => {
       const btn = e.target.closest("button[data-preset]");
