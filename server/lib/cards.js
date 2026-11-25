@@ -725,7 +725,13 @@ async function refreshBulk(opts) {
     // the daily job's own price-overlay slot) can't silently leave prices
     // on the wrong source until the next scheduled run. Best effort, same as
     // compactLiveCache above: a Manapool hiccup shouldn't fail an otherwise
-    // good card rebuild.
+    // good card rebuild. If the overlay is refused (#529) the printings keep
+    // Scryfall's numbers until the next good refresh (the daily job's slot
+    // or Admin's Refresh now): the old overlay is already gone, and a
+    // Scryfall price beats an empty one. Clear the overlay stamp so status()
+    // doesn't claim Manapool prices that are no longer loaded.
+    state.mpPricesUpdatedAt = null;
+    state.mpPricesMatched = null;
     try { await applyPriceSource(); }
     catch (e) { log("price source re-apply after rebuild failed: " + (e.message || e)); }
     log("card database ready: " + state.count.toLocaleString() + " cards in " +
@@ -1371,21 +1377,56 @@ async function applyPriceSource() {
     }
     state.mpPricesUpdatedAt = null;
     state.mpPricesMatched = null;
+    state.mpPricesFailedAt = null;
+    state.mpPricesError = null;
     return { ok: true, source: "scryfall", total: byId.size };
   }
-  const priced = await integrations.manapoolCatalogPrices();
+  // #529: a bad Manapool answer once overwrote every printing's price with
+  // null (0/543,023 priced). Nothing is written now until the new feed has
+  // proven plausible: any fetch error, no match at all, or under half of the
+  // last good refresh's match count is refused whole, leaving whatever
+  // prices are already loaded - the previous overlay normally, or Scryfall's
+  // numbers right after a boot or rebuild (no overlay is live then, see
+  // refreshBulk) - and recording why for Admin's price-source line. A
+  // normal day moves the match count by a few hundred out of ~104k.
+  let priced;
+  try { priced = await integrations.manapoolCatalogPrices(); }
+  catch (e) { throw refusePrices(e.message || String(e), e.status); }
   let matched = 0;
+  for (const id of priced.keys()) if (byId.has(id)) matched++;
+  if (!matched) {
+    throw refusePrices("none of its " + priced.size.toLocaleString("en-US") +
+      " prices matched a printing in the card database.");
+  }
+  const lastGood = state.mpLastGoodMatched;
+  if (lastGood && matched < lastGood / 2) {
+    throw refusePrices("it would price only " + matched.toLocaleString("en-US") +
+      " printings, under half of the " + lastGood.toLocaleString("en-US") + " from the last good refresh.");
+  }
   for (const card of byId.values()) {
     const mp = priced.get(card.id);
     card.usd = mp ? (mp.market != null ? mp.market : mp.nm) : null;
     card.usdFoil = mp ? (mp.marketFoil != null ? mp.marketFoil : mp.nmFoil) : null;
     card.usdEtched = mp ? mp.nmEtched : null;
-    if (mp) matched++;
   }
   state.mpPricesUpdatedAt = new Date().toISOString();
   state.mpPricesMatched = matched;
+  state.mpLastGoodMatched = matched;
+  state.mpPricesFailedAt = null;
+  state.mpPricesError = null;
   log("Manapool price overlay: " + matched + "/" + byId.size + " printings priced");
   return { ok: true, source: "manapool", matched, total: byId.size };
+}
+/* Records a refused Manapool overlay for status() and hands back the error
+   applyPriceSource() throws - every caller already catches and logs it, and
+   the admin routes show its message as-is (status 502 unless the fetch
+   error carried its own). */
+function refusePrices(why, status) {
+  state.mpPricesFailedAt = new Date().toISOString();
+  state.mpPricesError = why;
+  log("Manapool price overlay REFUSED, prices left as they were: " + why);
+  return Object.assign(new Error("Manapool prices not applied: " + why),
+    { status: typeof status === "number" ? status : 502 });
 }
 
 /* Price for a printing in a given finish, from the in-memory index. Used by the
@@ -1426,7 +1467,12 @@ function status() {
     liveFallback: cfg.cards.liveFallback !== false,
     priceSource: cfg.cards.priceSource || "scryfall",
     mpPricesUpdatedAt: state.mpPricesUpdatedAt || null,
-    mpPricesMatched: state.mpPricesMatched == null ? null : state.mpPricesMatched
+    mpPricesMatched: state.mpPricesMatched == null ? null : state.mpPricesMatched,
+    // #529: set while the latest Manapool refresh was refused; cleared by
+    // the next good one. mpPricesUpdatedAt above is then still the overlay
+    // actually loaded (null = Scryfall's numbers, e.g. right after a rebuild).
+    mpPricesFailedAt: state.mpPricesFailedAt || null,
+    mpPricesError: state.mpPricesError || null
   };
 }
 

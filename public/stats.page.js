@@ -295,7 +295,7 @@
       : "no receipts with a purchase price yet";
     const body = $("recBody");
     if (!rows.length) {
-      body.innerHTML = UI.emptyRow(9, { icon: "money", title: "Nothing to measure yet.",
+      body.innerHTML = UI.emptyRow(10, { icon: "money", title: "Nothing to measure yet.",
         hint: "A lot receipt with a purchase price shows up here once it is posted." });
       return;
     }
@@ -379,18 +379,18 @@
     $("soldHdr").textContent = groups.length ? groups.length + " printing(s) with a real sale" : "";
     tiles.innerHTML = "";
     if (!groups.length) {
-      body.innerHTML = UI.emptyRow(9, { icon: "money", title: "No sales with a captured sale price yet.",
+      body.innerHTML = UI.emptyRow(10, { icon: "money", title: "No sales with a captured sale price yet.",
         hint: "Ship a Manapool order or sell cards on a walk-in order to start building this up." });
       return;
     }
     const keys = soldKeys(groups);
-    if (!(soldPrices && G.sameKeySet(keys, soldPrices.keys))) body.innerHTML = UI.skeletonRows(9, 4);
+    if (!(soldPrices && G.sameKeySet(keys, soldPrices.keys))) body.innerHTML = UI.skeletonRows(10, 4);
     let found;
     try {
       found = await soldMarket(groups, keys);
     } catch (e) {
       if (runId !== soldRunId) return;
-      body.innerHTML = UI.emptyRow(9, { icon: "error", title: "Could not load current market prices: " + G.esc(e.message) });
+      body.innerHTML = UI.emptyRow(10, { icon: "error", title: "Could not load current market prices: " + G.esc(e.message) });
       return;
     }
     if (runId !== soldRunId) return;   // a newer render superseded this one
@@ -407,6 +407,7 @@
       const card = found.get(G.printKey(g.set, g.collector, "en"));
       const market = card ? G.priceOf(card, g.finish) : null;
       const delta = market != null && market > 0 ? (avgSold - market) / market * 100 : null;
+      const deltaUsd = market != null && market > 0 ? avgSold - market : null;
       totalSold += g.total;
       if (market != null && market > 0) { matchedSold += g.total; totalMarket += market * g.qty; }
       else unpriced++;
@@ -420,7 +421,9 @@
         '<td class="num hide-sm">' + g.qty + "</td>" +
         '<td class="num">' + G.money(avgSold) + "</td>" +
         '<td class="num">' + (market == null ? '<span class="muted">no longer priced</span>' : G.money(market)) + "</td>" +
-        '<td class="num ' + (delta == null ? "" : delta >= 0 ? "good" : "bad") + '">' +
+        '<td class="num ' + (deltaUsd == null ? "" : deltaUsd >= 0 ? "good" : "bad") + '" data-v="' + (deltaUsd == null ? "" : deltaUsd) + '">' +
+        (deltaUsd == null ? '<span class="muted">—</span>' : (deltaUsd >= 0 ? "+" : "−") + G.money(Math.abs(deltaUsd))) + "</td>" +
+        '<td class="num ' + (delta == null ? "" : delta >= 0 ? "good" : "bad") + '" data-v="' + (delta == null ? "" : delta) + '">' +
         (delta == null ? '<span class="muted">—</span>' : (delta >= 0 ? "+" : "") + delta.toFixed(1) + "%") + "</td></tr>";
     }).join("");
     body.querySelectorAll("tr").forEach((tr, i) => {

@@ -577,7 +577,19 @@
     lastCardsStatus = c;
     $("priceSourceSelect").value = c.priceSource || "scryfall";
     $("priceSourceManapoolNote").hidden = c.priceSource !== "manapool";
-    if (c.priceSource === "manapool") {
+    if (c.priceSource === "manapool" && c.mpPricesFailedAt) {
+      // #529: a refused refresh leaves the loaded prices alone - say so,
+      // and which prices those are.
+      const why = String(c.mpPricesError || "no reason given").replace(/\.?\s*$/, ".");
+      UI.setStatus("priceSourceStatus", "Last Manapool refresh failed at " +
+        new Date(c.mpPricesFailedAt).toLocaleString() + ": " + why + " " +
+        (c.mpPricesUpdatedAt
+          ? "Still using Manapool prices from " + new Date(c.mpPricesUpdatedAt).toLocaleString() + " (" +
+            (c.mpPricesMatched == null ? "?" : c.mpPricesMatched.toLocaleString()) + " of " +
+            c.count.toLocaleString() + " printings priced)."
+          : "Showing Scryfall's prices until Manapool answers properly. It retries daily, or press Refresh now."),
+        "err");
+    } else if (c.priceSource === "manapool") {
       UI.setStatus("priceSourceStatus", c.mpPricesUpdatedAt
         ? "Manapool prices as of " + new Date(c.mpPricesUpdatedAt).toLocaleString() + " — " +
           (c.mpPricesMatched == null ? "?" : c.mpPricesMatched.toLocaleString()) + " of " +

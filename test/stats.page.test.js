@@ -102,10 +102,10 @@ test("a superseded Sold vs market response doesn't draw over the newer one (#115
   assert.match(pg.$("soldTiles").innerHTML, /3 printing/, "the 2-printing response that came back last was dropped");
 });
 
-test("#116: the query chip's clear button is labelled, and Sold's empty state spans all 9 columns", async () => {
+test("#116: the query chip's clear button is labelled, and Sold's empty state spans all 10 columns", async () => {
   const pg = loadPage("stats.page.js", { routes: url => url.includes("set-completion") ? { data: [] } : {} });
   await pg.boot();
-  assert.match(pg.$("soldBody").innerHTML, /^\[emptyrow 9:/);
+  assert.match(pg.$("soldBody").innerHTML, /^\[emptyrow 10:/);
   // Open the query builder and come back with one condition.
   pg.ui.openQuery = async () => Object.assign(pg.G.emptyQuery(), { name: "bolt" });
   await pg.$("btnQuery").fire("click");

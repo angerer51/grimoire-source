@@ -538,10 +538,24 @@ async function manapoolInventory(creds, params) {
    etched (Manapool has no etched price tier at all), only the flat NM ask. */
 async function manapoolCatalogPrices() {
   const data = await jsonRequest(mpUrl("pricesSingles", {}), { timeoutMs: 60000 });
-  const list = Array.isArray(data) ? data : (data && data.data) || [];
+  // #529: a 200 that wasn't the expected list used to become an empty Map,
+  // and cards.applyPriceSource() then wiped every printing's price with it
+  // (0/543,023 priced, 2026-11-24 05:00). Anything but a non-empty list of
+  // rows is an error now, saying briefly what came back instead.
+  const list = Array.isArray(data) ? data : (data && Array.isArray(data.data)) ? data.data : null;
+  const bad = msg => Object.assign(new Error("Manapool's price feed " + msg), { status: 502 });
+  if (!list) {
+    if (data == null) throw bad("came back empty.");
+    if (data.rawText != null) {
+      throw bad("sent back something that isn't price data (it starts \"" +
+        String(data.rawText).replace(/\s+/g, " ").trim().slice(0, 80) + "\").");
+    }
+    throw bad("came back without a list of prices.");
+  }
+  if (!list.length) throw bad("came back with an empty price list.");
   const out = new Map();   // scryfallId -> {market, marketFoil, nm, nmFoil, nmEtched}
   for (const row of list) {
-    if (!row.scryfall_id) continue;
+    if (!row || !row.scryfall_id) continue;
     out.set(row.scryfall_id, {
       market: centsToDollars(row.price_market),
       marketFoil: centsToDollars(row.price_market_foil),
@@ -550,6 +564,7 @@ async function manapoolCatalogPrices() {
       nmEtched: centsToDollars(row.price_cents_nm_etched)
     });
   }
+  if (!out.size) throw bad("had " + list.length.toLocaleString("en-US") + " rows but none with a Scryfall id.");
   return out;
 }
 

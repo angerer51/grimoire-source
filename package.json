@@ -1,6 +1,6 @@
 {
   "name": "grimoire",
-  "version": "2026.11.24-02",
+  "version": "2026.11.24-04",
   "private": true,
   "description": "Grimoire - self-hosted Magic: The Gathering card inventory, warehouse and price history",
   "license": "UNLICENSED",
